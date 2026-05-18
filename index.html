@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="HKA Fleet"/>
+<meta name="theme-color" content="#080f1e"/>
+<title>HKA Fleet Reference</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body,#root{height:100%;width:100%;background:#080f1e;}
+  body{overflow:hidden;font-family:'Courier New',monospace;}
+  button{font-family:'Courier New',monospace;background:none;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:#080f1e;}
+  ::-webkit-scrollbar-thumb{background:#1e2d4a;border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const{useState,useEffect}=React;
+
+// ── TOKENS ────────────────────────────────────────────────────────────────────
+const C={
+  bg:"#080f1e",panel:"#0d1525",border:"#1e2d4a",border2:"#1a2035",
+  text:"#c8d8f0",muted:"#556688",dim:"#334466",vdim:"#1e2d4a",
+  amber:"#f5a623",amberBg:"#2a1f00",amberBorder:"#3a2f00",
+  green:"#00cc66",greenBg:"#001a0f",greenBorder:"#003320",
+  red:"#ff4444",redBg:"#2a0808",redBorder:"#3a1010",
+  blue:"#44aaff",blueBg:"#001a2a",blueBorder:"#003355",
+  orange:"#ff7733",orangeBg:"#1a0c00",orangeBorder:"#3a2000",
+};
+const M="'Courier New',monospace";
+
+// ── MICRO COMPONENTS ──────────────────────────────────────────────────────────
+const Tag=({children,color="default"})=>{
+  const m={default:[C.panel,C.muted,C.border],amber:[C.amberBg,C.amber,C.amberBorder],
+    green:[C.greenBg,C.green,C.greenBorder],red:[C.redBg,C.red,C.redBorder],
+    blue:[C.blueBg,C.blue,C.blueBorder],orange:[C.orangeBg,C.orange,C.orangeBorder]};
+  const[bg,txt,bd]=m[color]||m.default;
+  return <span style={{display:"inline-block",padding:"2px 7px",borderRadius:4,fontSize:10,
+    fontFamily:M,fontWeight:700,letterSpacing:"0.05em",backgroundColor:bg,color:txt,border:`1px solid ${bd}`}}>{children}</span>;
+};
+const Row=({label,value,hi})=>(
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+    padding:"7px 0",borderBottom:`1px solid ${C.border2}`,gap:12}}>
+    <span style={{color:C.muted,fontSize:11,fontFamily:M,flexShrink:0}}>{label}</span>
+    <span style={{color:hi?C.amber:C.text,fontSize:13,fontFamily:M,textAlign:"right",fontWeight:hi?"700":"400"}}>{value}</span>
+  </div>
+);
+const Sec=({title,children})=>(
+  <div style={{marginBottom:16}}>
+    <div style={{fontSize:9,color:C.muted,letterSpacing:"0.15em",borderBottom:`1px solid ${C.border}`,paddingBottom:6,marginBottom:10}}>{title}</div>
+    {children}
+  </div>
+);
+const Card=({children,color})=>{
+  const bgs={amber:C.amberBg,red:C.redBg,green:C.greenBg,blue:C.blueBg,orange:C.orangeBg};
+  const bds={amber:C.amberBorder,red:C.redBorder,green:C.greenBorder,blue:C.blueBorder,orange:C.orangeBorder};
+  return <div style={{padding:"10px 12px",marginBottom:6,borderRadius:6,
+    backgroundColor:bgs[color]||C.panel,border:`1px solid ${bds[color]||C.border}`}}>{children}</div>;
+};
+const Pill=({label,value,sub,color})=>{
+  const colors={amber:[C.amberBg,C.amber],blue:[C.blueBg,C.blue],green:[C.greenBg,C.green],red:[C.redBg,C.red]};
+  const[bg,txt]=colors[color]||[C.panel,C.amber];
+  return <div style={{padding:"10px 12px",backgroundColor:bg,borderRadius:6,border:`1px solid ${C.border}`,display:"flex",flexDirection:"column"}}>
+    <span style={{fontSize:10,color:C.muted,marginBottom:3}}>{label}</span>
+    <span style={{fontSize:18,color:txt,fontWeight:700,fontFamily:M,lineHeight:1}}>{value}</span>
+    {sub&&<span style={{fontSize:10,color:C.dim,marginTop:3}}>{sub}</span>}
+  </div>;
+};
+const NavBtn=({icon,label,active,onClick})=>(
+  <button onClick={onClick} style={{flex:1,background:"none",border:"none",
+    borderTop:active?`2px solid ${C.amber}`:"2px solid transparent",
+    padding:"8px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+    <span style={{fontSize:18}}>{icon}</span>
+    <span style={{fontSize:9,fontFamily:M,color:active?C.amber:C.muted,letterSpacing:"0.05em"}}>{label}</span>
+  </button>
+);
+
+// ── FLEET DATA ─────────────────────────────────────────────────────────────────
+const FLEET=[
+  {reg:"B-LPR",model:"A321-231", msn:4315,engine:"IAE V2500-A5",et:"IAE",yr:2010,prev:"Vietnam Airlines",      fms:"THALES 1A (S7A/FG I15)",    wl:false,w:"34.1m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:93400,mtow:93000,mlw:77800,mzfw:73800,min:47500},fuel:20953,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"YES (FLAPS ext)",wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE — discontinuous EPR)",notes:["No RADIO Minima on SEC FLPN (LVO)","Additional ACT fitted — total fuel 20,530 Kg","Camera screen behind pilots","E-321-26-001 (vital equipment)"],caut:["Spurious CAT 2 INOP","Erroneous Vertical Profile in Final Approach","ENG: Reduction of Stall Margin during Descent","FMS2 THALES TAB: DSC-22_20-100-30"]},
+  {reg:"B-LPS",model:"A320-232", msn:4804,engine:"IAE V2500-A5",et:"IAE",yr:2011,prev:"Tiger Air Taiwan",       fms:"HONEYWELL 1A (H2C/FG 115)",wl:false,w:"34.1m",cfg:"180Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:77400,mtow:77000,mlw:64500,mzfw:61000,min:37230},fuel:18729,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES (FLAPS ext)",wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"15min",ice:"NO — Visual only", seats:"3/4",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Keep-out N1 60–74% (IAE)",notes:["Row 31: Airbag seatbelts — no inf+SLB, CRS, ext belt","Air Total BCF + Drager in cockpit","Camera screen behind pilots","Strong nosewheel vibration on T/O"],caut:["Spurious CAT 2 INOP","Weather Radar degraded above 80 NM","FMS2 HONEYWELL TAB: DSC-22_20-100-20"]},
+  {reg:"B-LPT",model:"A320-232", msn:4874,engine:"IAE V2500-A5",et:"IAE",yr:2011,prev:"Tiger Air Taiwan",       fms:"HONEYWELL 1A (H2C/FG 115)",wl:false,w:"34.1m",cfg:"180Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:77400,mtow:77000,mlw:64500,mzfw:61000,min:37230},fuel:18729,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES (FLAPS ext)",wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"15min",ice:"NO — Visual only", seats:"3/4",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Keep-out N1 60–74% (IAE)",notes:["Row 31: Airbag seatbelts — no inf+SLB, CRS, ext belt","Air Total BCF + Drager in cockpit"],caut:["Spurious CAT 2 INOP","Weather Radar degraded above 80 NM","FMS2 HONEYWELL TAB: DSC-22_20-100-20"]},
+  {reg:"B-LPC",model:"A320-214", msn:5147,engine:"CFM56-5B",    et:"CFM",yr:2012,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:19004,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
+  {reg:"B-LPY",model:"A320-232", msn:5156,engine:"IAE V2500-A5",et:"IAE",yr:2012,prev:"China Eastern",          fms:"THALES 1A (S7B/FG I15)",   wl:false,w:"34.1m",cfg:"8C/150Y Dual",dual:true, exitRow:"38/39",        wts:{taxi:73900,mtow:73500,mlw:64500,mzfw:61000,min:37230},fuel:18729,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"NO",             wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"NO — Visual only", seats:"TBC",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Keep-out N1 60–74% (IAE)",notes:["No Inch Mercury on STBY","NO long range over water (>400NM or 120min)","ELT Kannad 406 AS at R2 bulkhead","Survival Kit relocated row 54ABC","E-321-26-001 (vital equipment)"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt"]},
+  {reg:"B-LPV",model:"A320-214", msn:5172,engine:"CFM56-5B",    et:"CFM",yr:2012,prev:"Lucky Air",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:19004,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"TBC",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["NO long range over water (>400NM or 120min)","ELT ADT 406 S at R2 FWD O/H Locker"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt"]},
+  {reg:"B-LPD",model:"A320-214", msn:5189,engine:"CFM56-5B",    et:"CFM",yr:2012,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:19004,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
+  {reg:"B-LPE",model:"A320-214", msn:5260,engine:"CFM56-5B",    et:"CFM",yr:2012,prev:"HKA/HKE/GX/HKA",        fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:19004,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/TBC",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
+  {reg:"B-LPI",model:"A320-214", msn:5416,engine:"CFM56-5B",    et:"CFM",yr:2013,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"8C/150Y Dual",dual:true, exitRow:"38/39",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:19004,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["Hexagon life raft + survival kit: last row RHS O/H Locker","No PRM Row 51 (fixed armrest)"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
+  {reg:"B-LPU",model:"A320-214", msn:5512,engine:"CFM56-5B",    et:"CFM",yr:2013,prev:"Starflyer",              fms:"HONEYWELL 1A (H2C/FG C14)",wl:false,w:"34.1m",cfg:"150Y Mono",   dual:false,exitRow:"40/41",        wts:{taxi:77400,mtow:77000,mlw:64500,mzfw:61000,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES (FLAPS ext)",wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"15min",ice:"NO — Visual only", seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["⚠️ WXR: Manual tilt ONLY (FCTM-AS-WXR)","FMS: No confirm req. Offset from AND to waypoint.","BCF Air Total (w/safety lever) + PBE Drager in cockpit","ELT Rescu 406 SG at 55 HJK O/H Locker"],caut:["Spurious CAT 2 INOP","FMS2 HONEYWELL TAB: DSC-22_20-100-20"]},
+  {reg:"B-LPJ",model:"A320-214", msn:5514,engine:"CFM56-5B",    et:"CFM",yr:2013,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"8C/150Y Dual",dual:true, exitRow:"38/39",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["Hexagon life raft + survival kit: last row RHS O/H Locker","No PRM Row 51 (fixed armrest)"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
+  {reg:"B-LPK",model:"A320-214", msn:5544,engine:"CFM56-5B",    et:"CFM",yr:2013,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"8C/150Y Dual",dual:true, exitRow:"38/39",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["Hexagon life raft + survival kit: last row RHS O/H Locker","No PRM Row 51 (fixed armrest)","⚠️ Review PRO-SO-45 Engine Intermix Operations"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
+  {reg:"B-LPL",model:"A320-214S",msn:6003,engine:"CFM56-5B",    et:"CFM",yr:2014,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPM",model:"A320-214S",msn:6246,engine:"CFM56-5B",    et:"CFM",yr:2014,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPN",model:"A320-214S",msn:6442,engine:"CFM56-5B",    et:"CFM",yr:2015,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPO",model:"A320-214S",msn:6776,engine:"CFM56-5B",    et:"CFM",yr:2015,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPW",model:"A321-231S",msn:6853,engine:"IAE V2500-A5",et:"IAE",yr:2016,prev:"Capital Airlines BJ",   fms:"THALES 2 (S8A/FG PI18)",   wl:true, w:"35.8m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:89400,mtow:89000,mlw:77800,mzfw:73800,min:47500},fuel:18605,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"NO",             wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE)",notes:["TCAS BLUE equipped","ELT Kannad 406 AS at R4 FWD O/H Locker"],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30"]},
+  {reg:"B-LPX",model:"A321-231S",msn:6863,engine:"IAE V2500-A5",et:"IAE",yr:2016,prev:"Capital Airlines BJ",   fms:"THALES 2 (S8A/FG PI18)",   wl:true, w:"35.8m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:89400,mtow:89000,mlw:77800,mzfw:73800,min:47500},fuel:18605,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"NO",             wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE)",notes:["⚠️ NO AUTOLAND with 1 ENGINE-OUT (removed)","TCAS BLUE equipped","ELT Kannad 406 AS at R4 FWD O/H Locker","E-321-26-001 (vital equipment)"],caut:["Spurious CAT 2 INOP","⚠️ NO AUTOLAND with 1 ENGINE-OUT (removed)","FMS2 THALES Rel2 TAB: DSC-22_20-100-30"]},
+  {reg:"B-LPP",model:"A320-214S",msn:7035,engine:"CFM56-5B",    et:"CFM",yr:2016,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPQ",model:"A320-214S",msn:7077,engine:"CFM56-5B",    et:"CFM",yr:2016,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPZ",model:"A320-214", msn:7966,engine:"CFM56-5B",    et:"CFM",yr:2017,prev:"Vanilla Air / Peach",   fms:"HONEYWELL 1A (H2C/FG PC18)",wl:true,w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:77400,mtow:77000,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"TBC",            wifi:"TBC",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"TBC",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["⚠️ DATA PENDING — CONFIRM WHEN AIRCRAFT RELEASED"],caut:["⚠️ ALL data TBC — verify before any ops","FMS2 HONEYWELL TAB likely applies — confirm on release"]},
+];
+
+// ── LIMITS ────────────────────────────────────────────────────────────────────
+const EGT=[
+  {p:"T/O & GA (all eng.) 5 min",cfm:"950°C",iA320:"635°C",iA321:"650°C"},
+  {p:"T/O & GA (1 eng.)",        cfm:"950°C",iA320:"635°C",iA321:"650°C"},
+  {p:"MCT (no limit)",           cfm:"915°C",iA320:"610°C",iA321:"610°C"},
+  {p:"Starting — Ground",        cfm:"725°C",iA320:"635°C",iA321:"635°C"},
+  {p:"Starting — In Flight",     cfm:"725°C",iA320:"635°C",iA321:"635°C"},
+  {p:"Max N1",                   cfm:"104%", iA320:"100%", iA321:"100%"},
+  {p:"Max N2",                   cfm:"105%", iA320:"100%", iA321:"100%"},
+];
+const OIL=[
+  {p:"Max cont. temp",    cfm:"140°C",iA320:"155°C",iA321:"155°C"},
+  {p:"Max trans. 15 min", cfm:"155°C",iA320:"165°C",iA321:"165°C"},
+  {p:"Mini start temp",   cfm:"-40°C",iA320:"-40°C",iA321:"-40°C"},
+  {p:"Mini temp T/O",     cfm:"10°C", iA320:"50°C", iA321:"50°C"},
+  {p:"Mini temp > idle",  cfm:"N/A",  iA320:"-10°C",iA321:"-10°C"},
+  {p:"Mini oil qty",      cfm:"9.5qt +0.5/hr",iA320:"11qt +0.3/hr",iA321:"11qt +0.3/hr"},
+  {p:"Mini oil pressure", cfm:"13 PSI",iA320:"60 PSI",iA321:"60 PSI"},
+];
+const START_CFM=["Standard auto start = up to 3 attempts = 1 cycle","Ground starts: 20 s pause between cycles","15 min cooling after 4 failed cycles","Do NOT run starter when N2 > 20%"];
+const START_IAE=["Standard auto start = 1 attempt only = 1 cycle","Ground starts: 15 s pause between cycles","30 min cooling after 3 failed cycles, or 4 min continuous crank, or 5 min cumulated crank","Manual start: max 2 min cycle time","Do NOT run starter when N2 > 10% on-ground / 18% in-flight"];
+const WIND=[
+  {c:"Crosswind — T/O",                   a320:"29 kts",        a321:"29 kts"},
+  {c:"Crosswind — Landing",               a320:"33 kts",        a321:"33 kts"},
+  {c:"Crosswind — First Officer",         a320:"15 kts",        a321:"15 kts"},
+  {c:"Tailwind — T/O",                    a320:"10 kts",        a321:"10 kts"},
+  {c:"Tailwind — Landing",               a320:"10 kts",        a321:"10 kts"},
+  {c:"Headwind — T/O & Landing",         a320:"50 kts",        a321:"50 kts"},
+  {c:"Headwind — Autoland",              a320:"30 kts",        a321:"CAT II 40 / CAT III 30"},
+  {c:"CW Autoland (no auto rollout)",     a320:"20 kts",        a321:"CAT II 25 / CAT III 30"},
+  {c:"CW Autoland (with auto rollout) *", a320:"15* / 20** kts",a321:"20 kts"},
+  {c:"Tailwind — Autoland",              a320:"10 kts",        a321:"10 kts"},
+  {c:"Wind — Door operation",            a320:"65 kts",        a321:"65 kts"},
+];
+
+// ── TABS DATA ─────────────────────────────────────────────────────────────────
+const TABS_DATA=[
+  {g:"ALL AIRCRAFT",col:"red",regs:"All HKA A320/A321 fleet",items:["AUTO FLT: Misbehavior of Enhanced LOC Capture Function","AUTO FLT: Unexpected G/S Mode Armed","DATA LINK: ATC MSG RECORD NOT RELIABLE — Displayed at ATSU Power-Up","DOORS: Erroneous Activation of cabin pressure warning lights without Residual Diff. Pressure"]},
+  {g:"FMS2 HONEYWELL — DSC-22_20-100-20",col:"blue",regs:"B-LPS, B-LPT, B-LPU",items:["AUTO FLT: Incorrect Management of SPD CSTR for Arrival Procedure Holds","AUTO FLT: Erroneous Fuel Prediction — Descent with 2 Altitude Constraints","AUTO FLT: Erroneous Lateral Guidance in NAV with LOC Armed during Approach","AUTO FLT: Erroneous Trajectory — Procedures with Turn Direction on Altitude Termination Leg","AUTO FLT: No Engagement of PRESEL SPD TARGET in Climb","AUTO FLT: Erroneous Managed Approach Speed after Descent wind uplink","AUTO FLT: Misalignment of FMS F-PLN Legs for ILS Approaches","AUTO FLT: Incorrect Management of ETA Entry on Predictive GPS Page","AUTO FLT: Flight Number Erased Upon AOC Flight Plan Uplink","AUTO FLT: Unexpected Switch of Speed Target when RTA Is Used","AUTO FLT: VOR/DME and VOR/TACAN Not Automatically Tuned","AUTO FLT: Optimum Target Speeds not updated after Automatic Deletion of Step Climb","AUTO FLT: Undue reduction of Speed Target — DIR/ABEAM on constant Mach Segment","AUTO FLT: Loss of Fuel and Time Predictions during Takeoff Data Insertion","AUTO FLT: Erroneous Vertical Profile — LOC B/C with MAP before runway threshold","AUTO FLT: Erroneous Vertical Guidance in Approach — DIR TO near Top of Descent","AUTO FLT: Erroneous CF Leg — FMS NEW RUNWAY with LS IDENT creation","AUTO FLT: Unexpected ILS Auto-tuning","AUTO FLT: Inadvertent T.O. Data Reversion Upon RWY Change","SURV: Weather Radar Performance above 80 NM (B-LPS, B-LPT only)"]},
+  {g:"FMS2 THALES — DSC-22_20-100-30 (All THALES)",col:"amber",regs:"B-LPR, B-LPC, B-LPV, B-LPD, B-LPE, B-LPI, B-LPJ, B-LPK, B-LPL, B-LPM, B-LPN, B-LPO, B-LPP, B-LPQ, B-LPW, B-LPX, B-LPY",items:["AUTO FLT: MCDU Frozen — crew accessed DIR TO / HOLD / OFFSET","AUTO FLT: Erroneous Cross Track Error / FD Orders after DIR TO on Aligned Waypoint","AUTO FLT: Erroneous Fuel Predictions — Descent with 2 Altitude Constraints","AUTO FLT: Erroneous Trajectory — HDG/TRK Mode with Turn Direction on Altitude Termination Leg","AUTO FLT: Waypoint Not Sequenced After DIR TO RADIAL IN","AUTO FLT: Unexpected DECELERATE on MCDU (and T/D REACHED on PFD) during Climb","AUTO FLT: FMS Reset upon crossing the 180th Meridian","AUTO FLT: Unexpected early CLB Mode after T/O with QFE setting","AUTO FLT: Unusable MIN DEST FOB Value in Secondary Flight Plan"]},
+  {g:"FMS2 THALES 1A — Additional",col:"orange",regs:"B-LPR, B-LPC, B-LPV, B-LPD, B-LPE, B-LPI, B-LPJ, B-LPK, B-LPL",items:["AUTO FLT: Erroneous Lateral Guidance in NAV with LOC Armed during Approach","AUTO FLT: Uncommanded Climb near Top of Descent (T/D)","AUTO FLT: Erroneous Altitude Constraint after SID or STAR Selection Change","AUTO FLT: Dual FMS Reset with Loss of Data — DIR TO/ABEAM with 3 STEP ALTS","AUTO FLT: Missing or Incorrect UPLINK Prompt on UPLINK T.O DATA Page"]},
+  {g:"Spurious CAT 2 INOP + Erroneous Vertical Profile",col:"red",regs:"B-LPR, B-LPS, B-LPT, B-LPY, B-LPW, B-LPX, B-LPC, B-LPV, B-LPD, B-LPE, B-LPI, B-LPU, B-LPJ, B-LPK, B-LPL",items:["AUTO FLT: Spurious CAT 2 INOP","AUTO FLT: Erroneous Vertical Profile in Final Approach"]},
+  {g:"B-LPR Specific",col:"red",regs:"B-LPR only",items:["ENG: Reduction of Stall Margin during Descent"]},
+];
+
+// ── SEP DATA ──────────────────────────────────────────────────────────────────
+const PREG=[
+  {w:"< 28 weeks (Single or Multiple)",  fly:true, req:"No medical certificate required (ref. OM-E)"},
+  {w:"28–35 wks +6 days (Single)",        fly:true, req:"Medical cert required: Fit to fly, issued within 7 days, EDD, weeks of pregnancy, single/multiple."},
+  {w:"28–31 wks +6 days (Multiple)",      fly:true, req:"Medical cert required: Fit to fly, issued within 7 days, EDD, weeks of pregnancy, single/multiple."},
+  {w:"Single ≥ 36 weeks",                fly:false,req:"NO FLY"},
+  {w:"Multiple ≥ 32 weeks",              fly:false,req:"NO FLY"},
+];
+const EQUIP=[
+  {n:"BCF (Halon 1211)",           ck:["Secure in position","Red disc intact","Safety catch intact","Discharge: 10 s from 8–10 ft"]},
+  {n:"BCF Air Total",              ck:["Secure in position","Black safety lever intact with wire seal","Pressure gauge needle in GREEN zone","Discharge: 10 s from 6 ft (2 m)"]},
+  {n:"PBE Smoke Hood (Type A/B)", ck:["Secure in position","Package intact","'Ready to use' green indicator visible","Max duration: 15 min"]},
+  {n:"Drager (PBE Oxycrew)",      ck:["Secure in position","Package intact","Paper seal intact","Red securing clamp intact","Activation: pull toggle","Max duration: 15 min"]},
+  {n:"Protective Gloves (leather)",ck:["In position","Paper seal intact"]},
+  {n:"Cotton Gloves",              ck:["In position","In pair"]},
+  {n:"Megaphone",                  ck:["Secure in position","Carrying case intact"]},
+  {n:"ELT",                        ck:["Secure in position","Red indicator light flashes every 5–10 sec"]},
+  {n:"Flashlight / Torch",         ck:["Secure in position","Slide ON/OFF switch to verify serviceability"]},
+];
+
+// ── DOC REF ───────────────────────────────────────────────────────────────────
+const DOCS=[
+  {d:"AFM",  col:"red",   items:["Approval data","General","Limitations","Emergency procedures","Abnormal procedures","Normal procedures","Performance (dry & wet runway)","Appendices and supplements","Master Configuration Deviation List (MCDL)","Supplementary performance (contaminated runway)","Regulatory differences (when applicable)"]},
+  {d:"FCOM", col:"amber", items:["General information (config summary, QRH, definitions, abbreviations)","Aircraft systems","Procedures","Limitations","Temporary Abnormal Behaviors (TAB)","Performance (EFB)"]},
+  {d:"FCTM", col:"green", items:["General Information","Airbus Operational Philosophy","Aircraft systems","Procedures"]},
+  {d:"MEL",  col:"blue",  items:["How to use","MEL entries","MEL items","MEL operational procedures"]},
+];
+const TERMS=[
+  {t:"WARNING",          col:"red",   def:"Procedure/technique which may result in PERSONAL INJURY or LOSS OF LIFE if not carefully followed."},
+  {t:"CAUTION",          col:"amber", def:"Procedure/technique which may result in DAMAGE TO EQUIPMENT if not carefully followed."},
+  {t:"LAND ASAP (RED)",  col:"red",   def:"Land as soon as possible at nearest airport where safe landing can be made. TIME-CRITICAL situation."},
+  {t:"LAND ASAP (AMBER)",col:"amber", def:"Consider landing at nearest SUITABLE airport. Suitability per operator policy."},
+  {t:"DU",               col:"default",def:"Documentary Unit — technical content unit."},
+  {t:"LEDU",             col:"default",def:"List of Effective Documentary Unit."},
+  {t:"TDU",              col:"default",def:"Temporary Documentary Unit."},
+];
+
+// ── SHARED COMPONENTS ──────────────────────────────────────────────────────────
+const LimTable=({rows})=>(
+  <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:M,minWidth:320}}>
+      <thead>
+        <tr>
+          {["",<span style={{color:C.green}}>CFM A320</span>,<span style={{color:C.blue}}>IAE A320</span>,<span style={{color:C.blue}}>IAE A321</span>].map((h,i)=>(
+            <th key={i} style={{padding:"6px 8px",borderBottom:`1px solid ${C.border}`,color:C.muted,textAlign:i===0?"left":"center",fontSize:10,whiteSpace:"nowrap"}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r,i)=>(
+          <tr key={i} style={{borderBottom:`1px solid ${C.border2}`}}>
+            <td style={{padding:"7px 8px",color:C.muted,fontSize:10}}>{r.p}</td>
+            <td style={{padding:"7px 8px",color:C.green,textAlign:"center",fontWeight:700}}>{r.cfm}</td>
+            <td style={{padding:"7px 8px",color:C.blue, textAlign:"center",fontWeight:700}}>{r.iA320}</td>
+            <td style={{padding:"7px 8px",color:C.blue, textAlign:"center",fontWeight:700}}>{r.iA321}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+// ── PAGES ─────────────────────────────────────────────────────────────────────
+function AcGrid({onSel}){
+  const[flt,setFlt]=useState("ALL");
+  const shown=FLEET.filter(f=>flt==="ALL"||(flt==="A321"?f.model.includes("321"):f.model.includes("320")));
+  return(
+    <div style={{padding:12}}>
+      <div style={{padding:"8px 12px",marginBottom:12,backgroundColor:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,fontSize:11,color:C.amber}}>
+        ⚠️ ALL AIRCRAFT — Rain repellent deactivated fleet-wide
+      </div>
+      <div style={{display:"flex",gap:6,marginBottom:12,alignItems:"center"}}>
+        {["ALL","A320","A321"].map(f=>(
+          <button key={f} onClick={()=>setFlt(f)} style={{padding:"4px 12px",border:`1px solid ${flt===f?C.amber:C.border}`,backgroundColor:flt===f?C.amberBg:"transparent",color:flt===f?C.amber:C.muted,borderRadius:4,fontSize:11,fontFamily:M,cursor:"pointer"}}>{f}</button>
+        ))}
+        <span style={{marginLeft:"auto",color:C.dim,fontSize:11}}>{shown.length} ACFT</span>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        {shown.map(ac=>(
+          <button key={ac.reg} onClick={()=>onSel(ac.reg)} style={{background:"none",backgroundColor:C.panel,border:`1px solid ${C.border}`,borderRadius:8,padding:"14px 12px",cursor:"pointer",textAlign:"left",position:"relative",overflow:"hidden"}}>
+            {ac.model.includes("321")&&<div style={{position:"absolute",top:0,right:0,width:4,height:"100%",backgroundColor:"#003366"}}/>}
+            <div style={{fontSize:17,fontWeight:700,color:C.amber,marginBottom:4,fontFamily:M}}>{ac.reg}</div>
+            <div style={{fontSize:11,color:"#8899bb",marginBottom:6,fontFamily:M}}>{ac.model}</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              <Tag color={ac.et==="IAE"?"blue":"green"}>{ac.et}</Tag>
+              {ac.wl&&<Tag color="amber">WLGT</Tag>}
+              {ac.dual&&<Tag color="amber">2CLS</Tag>}
+              {ac.ice!=="Standard"&&<Tag color="red">NO ICE</Tag>}
+              {(ac.wifi==="NO"||ac.wifi==="TBC")&&<Tag>NO WIFI</Tag>}
+              {ac.reg==="B-LPZ"&&<Tag color="red">TBC</Tag>}
+            </div>
+            <div style={{marginTop:8,fontSize:11,color:C.dim,fontFamily:M}}>{ac.cfg}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AcDetail({reg}){
+  const[tab,setTab]=useState(0);
+  const a=FLEET.find(f=>f.reg===reg);
+  if(!a)return null;
+  const is321=a.model.includes("321");
+  const tabs=["General","Weights","SEP/Cabin","Cautions"];
+  return(
+    <div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"12px 12px 0"}}>
+        <Tag color={a.et==="IAE"?"blue":"green"}>{a.engine}</Tag>
+        <Tag color={a.wl?"amber":"default"}>{a.wl?`WLGT ${a.w}`:`NO WLGT ${a.w}`}</Tag>
+        {a.dual&&<Tag color="amber">DUAL CLASS</Tag>}
+        {a.ice!=="Standard"&&<Tag color="red">NO ICE DETECT</Tag>}
+        <Tag color={a.wifi==="YES"?"green":"red"}>WIFI {a.wifi}</Tag>
+        {a.reg==="B-LPZ"&&<Tag color="red">DATA TBC</Tag>}
+      </div>
+      <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,margin:"12px 0 0"}}>
+        {tabs.map((t,i)=>(
+          <button key={t} onClick={()=>setTab(i)} style={{flex:1,padding:"8px 2px",border:"none",borderBottom:i===tab?`2px solid ${C.amber}`:"2px solid transparent",backgroundColor:"transparent",color:i===tab?C.amber:C.dim,fontSize:10,fontFamily:M,cursor:"pointer",fontWeight:i===tab?"700":"400"}}>{t}</button>
+        ))}
+      </div>
+      <div style={{padding:12}}>
+        {tab===0&&<>
+          <Row label="PREV OP" value={a.prev}/>
+          <Row label="REG YEAR" value={a.yr}/>
+          <Row label="MSN" value={a.msn}/>
+          <Row label="FMS" value={a.fms} hi/>
+          <Row label="ENGINE" value={a.engine}/>
+          <Row label="FADEC" value={a.fadec}/>
+          <Row label="CONFIG" value={a.cfg} hi/>
+          <Row label="EXIT ROW" value={a.exitRow} hi/>
+          <Row label="CREW SEATS" value={a.seats}/>
+          {is321&&<><Row label="MIN CREW" value={a.crewMn}/><Row label="NORM CREW" value={a.crewNm}/></>}
+          <Row label="WIFI" value={a.wifi} hi={a.wifi!=="YES"}/>
+          <Row label="CABIN RDY BTN" value={a.crBtn} hi={a.crBtn==="NO"}/>
+          <Row label="FUEL CAP" value={`${a.fuel.toLocaleString()} Kg`} hi/>
+          <Row label="O2" value={a.o2}/>
+          <Row label="EMERG LIGHTING" value={a.eL}/>
+          {a.cO2!=="N/A"&&<Row label="CABIN O2" value={a.cO2}/>}
+          <Row label="ICE DETECT" value={a.ice} hi={a.ice!=="Standard"}/>
+          {a.notes.length>0&&<Card color={a.notes.some(n=>n.startsWith("⚠️"))?"amber":"default"}>
+            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>NOTES</div>
+            {a.notes.map((n,i)=><div key={i} style={{fontSize:12,color:n.startsWith("⚠️")?C.amber:"#8899bb",marginBottom:5,lineHeight:1.5}}>{n}</div>)}
+          </Card>}
+        </>}
+        {tab===1&&<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+            <Pill label="MAX TAXI WT" value={a.wts.taxi.toLocaleString()} sub="kg" color="amber"/>
+            <Pill label="MTOW" value={a.wts.mtow.toLocaleString()} sub="kg" color="amber"/>
+            <Pill label="MLW" value={a.wts.mlw.toLocaleString()} sub="kg" color="blue"/>
+            <Pill label="MZFW" value={a.wts.mzfw.toLocaleString()} sub="kg" color="blue"/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+            <Pill label="MIN WEIGHT" value={a.wts.min.toLocaleString()} sub="kg" color="green"/>
+            <Pill label="FUEL CAP" value={a.fuel.toLocaleString()} sub="kg" color="amber"/>
+          </div>
+          <Card>
+            <div style={{fontSize:10,color:C.muted,marginBottom:6}}>LB ↔ KG CONVERSION</div>
+            <div style={{fontSize:12,color:C.muted,fontFamily:M}}>LB → KG  ×  0.453592</div>
+            <div style={{fontSize:12,color:C.muted,fontFamily:M}}>KG → LB  ×  2.204622</div>
+          </Card>
+        </>}
+        {tab===2&&<>
+          <Row label="PRM (self-reliant)" value={a.prm} hi/>
+          <Row label="INFANTS MAX" value={a.inf===2?"2 (1 CRD + 1 CRS)":a.inf}/>
+          <Row label="UM (6–12 yrs)" value={typeof a.um==="number"?`Max ${a.um} — >6 = extra crew`:a.um}/>
+          <Row label="YP (12–15 yrs)" value="No limitation"/>
+          <Row label="EMERG LIGHTING" value={a.eL} hi/>
+          {a.cO2!=="N/A"&&<Row label="CABIN O2 DURATION" value={a.cO2} hi/>}
+          <Row label="ADDITIONAL O2" value={a.o2} hi={a.o2.startsWith("Addl")}/>
+          <Card>
+            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>DOORS</div>
+            <div style={{fontSize:12,color:"#8899bb",lineHeight:1.6}}>{a.doors}</div>
+          </Card>
+          {is321&&<Card color="orange">
+            <div style={{fontSize:10,color:C.orange,marginBottom:4}}>A321 — CREW POSITIONING</div>
+            <div style={{fontSize:12,color:"#cc8844",lineHeight:1.6}}>{a.seats}</div>
+          </Card>}
+        </>}
+        {tab===3&&<>
+          {a.caut.map((c,i)=>(
+            <div key={i} style={{padding:"10px 12px",marginBottom:6,borderRadius:6,
+              backgroundColor:c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND")?C.redBg:C.panel,
+              border:`1px solid ${c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND")?C.redBorder:C.border}`,
+              fontSize:12,color:c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND")?"#ff6644":"#8899bb",lineHeight:1.5,fontFamily:M}}>
+              {c}
+            </div>
+          ))}
+          <Card color="green"><div style={{fontSize:11,color:C.green}}>ⓘ Verify all TABs in FCOM before flight. Non-official reference only.</div></Card>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+function LimitsPage(){
+  const[sub,setSub]=useState("EGT");
+  return(
+    <div>
+      <div style={{display:"flex",overflowX:"auto",gap:4,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`,WebkitOverflowScrolling:"touch"}}>
+        {["EGT","OIL","START","FLEX","WIND","REV"].map(s=>(
+          <button key={s} onClick={()=>setSub(s)} style={{flexShrink:0,padding:"6px 12px",border:`1px solid ${sub===s?C.amber:C.border}`,backgroundColor:sub===s?C.amberBg:"transparent",color:sub===s?C.amber:C.muted,borderRadius:4,fontSize:10,fontFamily:M,cursor:"pointer"}}>{s}</button>
+        ))}
+      </div>
+      <div style={{padding:12}}>
+        {sub==="EGT"&&<Sec title="EGT / N1 / N2 LIMITS"><LimTable rows={EGT}/></Sec>}
+        {sub==="OIL"&&<Sec title="OIL LIMITS"><LimTable rows={OIL}/></Sec>}
+        {sub==="START"&&<>
+          <Sec title="CFM — ENGINE START">{START_CFM.map((s,i)=><Card key={i}><span style={{color:C.green,fontWeight:700}}>CFM </span><span style={{fontSize:12,color:"#8899bb"}}>{s}</span></Card>)}</Sec>
+          <Sec title="IAE — ENGINE START">{START_IAE.map((s,i)=><Card key={i}><span style={{color:C.blue,fontWeight:700}}>IAE </span><span style={{fontSize:12,color:"#8899bb"}}>{s}</span></Card>)}</Sec>
+        </>}
+        {sub==="FLEX"&&<Sec title="FLEX TAKEOFF — TFLEX LIMITS">
+          {[{l:"A320 CFM — Max TFLEX",v:"ISA + 53°C",c:"green"},{l:"A321 IAE — Max TFLEX",v:"ISA + 42°C",c:"blue"},{l:"A320 IAE — Max TFLEX",v:"ISA + 71°C",c:"amber"},{l:"Min TFLEX",v:"NOT lower than TREF (flat temp)",c:"red"},{l:"Min TFLEX",v:"NOT lower than actual OAT",c:"red"},{l:"IAE crosswind start (A321/A320)",v:"Up to 35 kts",c:"amber"}].map((f,i)=>(
+            <Card key={i} color={f.c}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:3}}>{f.l}</div>
+              <div style={{fontSize:14,color:C[f.c]||C.amber,fontWeight:700,fontFamily:M}}>{f.v}</div>
+            </Card>
+          ))}
+          <Card><div style={{fontSize:11,color:C.muted}}>See FCTM PR-NP-SOP-120 for tailstrike avoidance guidance.</div></Card>
+        </Sec>}
+        {sub==="WIND"&&<>
+          <Sec title="OPERATIONAL WIND LIMITS — inc. GUSTS (Maximum)">
+            <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:M}}>
+                <thead><tr>{["CONDITION","A320","A321"].map((h,i)=><th key={i} style={{padding:"6px 8px",borderBottom:`1px solid ${C.border}`,color:C.muted,textAlign:i===0?"left":"center",fontSize:10}}>{h}</th>)}</tr></thead>
+                <tbody>{WIND.map((r,i)=><tr key={i} style={{borderBottom:`1px solid ${C.border2}`}}><td style={{padding:"7px 8px",color:C.muted,fontSize:10}}>{r.c}</td><td style={{padding:"7px 8px",color:C.amber,textAlign:"center",fontWeight:700}}>{r.a320}</td><td style={{padding:"7px 8px",color:C.amber,textAlign:"center",fontWeight:700}}>{r.a321}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </Sec>
+          <Card>
+            <div style={{fontSize:10,color:C.muted,lineHeight:1.8}}>
+              * Auto rollout 15 kts: B-LPL, B-LPM, B-LPN, B-LPO, B-LPP, B-LPQ<br/>
+              ** Auto rollout 20 kts: B-LPC, B-LPD, B-LPE, B-LPI, B-LPJ, B-LPK<br/>
+              All limits include gusts.
+            </div>
+          </Card>
+        </>}
+        {sub==="REV"&&<Sec title="REVERSE THRUST — ALL AIRCRAFT">
+          {[{t:"No reversers in flight",c:"red"},{t:"Do NOT backup aircraft using reverse thrust",c:"red"},{t:"Max reverse — do NOT use below 70 kts",c:"amber"},{t:"Idle reverse — permitted down to aircraft stop",c:"green"}].map((r,i)=>(
+            <Card key={i} color={r.c}><div style={{fontSize:13,color:C[r.c],fontFamily:M,fontWeight:700}}>{r.t}</div></Card>
+          ))}
+        </Sec>}
+      </div>
+    </div>
+  );
+}
+
+function TabsPage(){
+  const[open,setOpen]=useState(null);
+  return(
+    <div style={{padding:12}}>
+      <Card color="red"><div style={{fontSize:11,color:C.red}}>⚠️ Temporary Abnormal Behaviors (FCOM TAB). Always verify DSC references in FCOM before flight.</div></Card>
+      {TABS_DATA.map((g,i)=>(
+        <div key={i} style={{marginBottom:8,borderRadius:6,overflow:"hidden",border:`1px solid ${C[g.col+"Border"]||C.border}`}}>
+          <button onClick={()=>setOpen(open===i?null:i)} style={{width:"100%",background:"none",backgroundColor:open===i?(C[g.col+"Bg"]||C.panel):C.panel,border:"none",padding:"12px",cursor:"pointer",textAlign:"left"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,color:C[g.col]||C.amber,fontFamily:M,fontWeight:700}}>{g.g}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:3,lineHeight:1.4}}>{g.regs}</div>
+              </div>
+              <div style={{color:C.muted,fontSize:14,flexShrink:0,marginLeft:8}}>{open===i?"▲":"▼"}</div>
+            </div>
+          </button>
+          {open===i&&(
+            <div style={{padding:"0 12px 12px",backgroundColor:C[g.col+"Bg"]||C.panel}}>
+              {g.items.map((item,j)=>(
+                <div key={j} style={{padding:"7px 0",borderBottom:`1px solid ${C.border2}`,fontSize:11,color:"#8899bb",lineHeight:1.5,fontFamily:M}}>{item}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SepPage(){
+  const[sub,setSub]=useState("PREG");
+  return(
+    <div>
+      <div style={{display:"flex",gap:4,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+        {[["PREG","Pregnant"],["PRM","PRM / UM"],["EQUIP","Equipment"],["PED","PED"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setSub(k)} style={{flexShrink:0,padding:"6px 10px",border:`1px solid ${sub===k?C.amber:C.border}`,backgroundColor:sub===k?C.amberBg:"transparent",color:sub===k?C.amber:C.muted,borderRadius:4,fontSize:10,fontFamily:M,cursor:"pointer"}}>{l}</button>
+        ))}
+      </div>
+      <div style={{padding:12}}>
+        {sub==="PREG"&&<Sec title="PREGNANT PASSENGER POLICY (ref. OM-E)">
+          {PREG.map((p,i)=>(
+            <Card key={i} color={p.fly?"default":"red"}>
+              <div style={{fontSize:12,color:p.fly?C.amber:C.red,fontWeight:700,marginBottom:4,fontFamily:M}}>{p.w}</div>
+              <div style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{p.req}</div>
+            </Card>
+          ))}
+        </Sec>}
+        {sub==="PRM"&&<Sec title="PRM / UM / YP LIMITS">
+          {[
+            {l:"PRM (self-reliant) — A320",v:"4 per flight"},
+            {l:"PRM (self-reliant) — A321",v:"8 per flight"},
+            {l:"UM (6–12 yrs) — A320 & A321",v:"Max 10. If >6 UMs, extra crew required."},
+            {l:"YP (12–15 yrs)",v:"No limitation"},
+            {l:"Infants — A320",v:"Max 2 (1 with CRD + 1 with CRS)"},
+            {l:"Infants — A321",v:"Max 15"},
+          ].map((r,i)=><Row key={i} label={r.l} value={r.v} hi={r.l.includes("PRM")}/>)}
+        </Sec>}
+        {sub==="EQUIP"&&<Sec title="COCKPIT EMERGENCY EQUIPMENT — SERVICEABILITY">
+          {EQUIP.map((eq,i)=>(
+            <Card key={i}>
+              <div style={{fontSize:12,color:C.amber,fontWeight:700,marginBottom:8,fontFamily:M}}>{eq.n}</div>
+              {eq.ck.map((c,j)=><div key={j} style={{display:"flex",gap:8,marginBottom:4}}>
+                <span style={{color:C.green,flexShrink:0}}>✓</span>
+                <span style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{c}</span>
+              </div>)}
+            </Card>
+          ))}
+        </Sec>}
+        {sub==="PED"&&<Sec title="PORTABLE ELECTRONIC DEVICES (PED)">
+          {[{t:"U-PEDs",f:"Unintentionally Transmitting PEDs",c:"amber"},{t:"T-PEDs",f:"Intentionally Transmitting PEDs",c:"red"},{t:"C-PEDs",f:"Controlled Portable Devices",c:"green"}].map((p,i)=>(
+            <Card key={i} color={p.c}>
+              <div style={{fontSize:14,color:C[p.c],fontWeight:700,fontFamily:M}}>{p.t}</div>
+              <div style={{fontSize:11,color:"#8899bb",marginTop:4}}>{p.f}</div>
+            </Card>
+          ))}
+          <Card><div style={{fontSize:11,color:C.muted,lineHeight:1.7}}>Refer to OM-A and FCOM for approved PED usage restrictions on the flight deck and in the cabin.</div></Card>
+        </Sec>}
+      </div>
+    </div>
+  );
+}
+
+function RefPage(){
+  const[sub,setSub]=useState("DOCS");
+  return(
+    <div>
+      <div style={{display:"flex",gap:4,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`}}>
+        {[["DOCS","Doc Structure"],["TERM","Terminology"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setSub(k)} style={{padding:"6px 10px",border:`1px solid ${sub===k?C.amber:C.border}`,backgroundColor:sub===k?C.amberBg:"transparent",color:sub===k?C.amber:C.muted,borderRadius:4,fontSize:10,fontFamily:M,cursor:"pointer"}}>{l}</button>
+        ))}
+      </div>
+      <div style={{padding:12}}>
+        {sub==="DOCS"&&<>
+          {DOCS.map((d,i)=>(
+            <Card key={i} color={d.col}>
+              <div style={{fontSize:14,color:C[d.col],fontWeight:700,fontFamily:M,marginBottom:8}}>{d.d}</div>
+              {d.items.map((item,j)=><div key={j} style={{display:"flex",gap:8,marginBottom:4}}>
+                <span style={{color:C[d.col],flexShrink:0}}>—</span>
+                <span style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{item}</span>
+              </div>)}
+            </Card>
+          ))}
+          <Card>
+            <div style={{fontSize:10,color:C.muted,lineHeight:1.8}}>
+              <div style={{color:C.amber,fontWeight:700,marginBottom:4}}>ABBREVIATIONS</div>
+              <div><span style={{color:C.amber}}>DU</span> — Documentary Unit (technical content)</div>
+              <div><span style={{color:C.amber}}>LEDU</span> — List of Effective Documentary Unit</div>
+              <div><span style={{color:C.amber}}>TDU</span> — Temporary Documentary Unit</div>
+            </div>
+          </Card>
+        </>}
+        {sub==="TERM"&&<Sec title="TERMINOLOGY & DEFINITIONS">
+          {TERMS.map((t,i)=>(
+            <Card key={i} color={t.col}>
+              <div style={{fontSize:13,color:C[t.col]||C.amber,fontWeight:700,fontFamily:M,marginBottom:6}}>{t.t}</div>
+              <div style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{t.def}</div>
+            </Card>
+          ))}
+        </Sec>}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App(){
+  const[page,setPage]=useState("home");
+  const[sel,setSel]=useState(null);
+  const[vh,setVh]=useState(window.innerHeight);
+
+  useEffect(()=>{
+    const update=()=>setVh(window.innerHeight);
+    window.addEventListener("resize",update);
+    return()=>window.removeEventListener("resize",update);
+  },[]);
+
+  const goAc=(reg)=>{setSel(reg);setPage("ac");};
+  const goHome=()=>{setSel(null);setPage("home");};
+
+  const titles={home:"FLEET",ac:sel||"",limits:"LIMITS",tabs:"TABS",sep:"SEP",ref:"REFERENCE"};
+  const subs={home:"Aircraft Reference",ac:sel?FLEET.find(f=>f.reg===sel)?.model:"",limits:"Engine · Oil · Start · Flex · Wind · Rev",tabs:"Temporary Abnormal Behaviors",sep:"Passengers · Equipment",ref:"Documents · Terminology"};
+
+  const HEADER_H=68;
+  const NAV_H=62;
+  const FOOTER_H=28;
+  const scrollH=vh-HEADER_H-NAV_H-FOOTER_H;
+
+  return(
+    <div style={{height:vh,backgroundColor:C.bg,color:C.text,fontFamily:M,maxWidth:480,margin:"0 auto",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* HEADER */}
+      <div style={{height:HEADER_H,backgroundColor:C.bg,borderBottom:`1px solid ${C.border}`,flexShrink:0,display:"flex",alignItems:"center",padding:"0 16px",gap:10}}>
+        {page==="ac"&&<button onClick={goHome} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,padding:"6px 10px",borderRadius:4,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"}}>← BACK</button>}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:9,color:C.dim,letterSpacing:"0.15em"}}>HONG KONG AIRLINES</div>
+          <div style={{fontSize:15,color:C.amber,fontWeight:700,letterSpacing:"0.1em"}}>{titles[page]}</div>
+          <div style={{fontSize:10,color:C.dim}}>{subs[page]}</div>
+        </div>
+        {page==="ac"&&sel&&(()=>{const a=FLEET.find(f=>f.reg===sel);return(
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontSize:10,color:C.dim}}>MSN {a?.msn}</div>
+            <div style={{fontSize:11,color:"#8899bb"}}>{a?.engine}</div>
+          </div>
+        );})()}
+      </div>
+
+      {/* SCROLL CONTENT */}
+      <div style={{height:scrollH,overflowY:"auto",WebkitOverflowScrolling:"touch",flexShrink:0}}>
+        {page==="home"  &&<AcGrid onSel={goAc}/>}
+        {page==="ac"    &&sel&&<AcDetail reg={sel}/>}
+        {page==="limits"&&<LimitsPage/>}
+        {page==="tabs"  &&<TabsPage/>}
+        {page==="sep"   &&<SepPage/>}
+        {page==="ref"   &&<RefPage/>}
+      </div>
+
+      {/* FOOTER */}
+      <div style={{height:FOOTER_H,display:"flex",alignItems:"center",justifyContent:"center",borderTop:`1px solid ${C.border2}`,flexShrink:0}}>
+        <div style={{fontSize:9,color:C.vdim,letterSpacing:"0.08em"}}>NON-OFFICIAL · NOT FOR OPERATIONAL USE · V2.6 MAY 2026</div>
+      </div>
+
+      {/* BOTTOM NAV */}
+      <div style={{height:NAV_H,backgroundColor:C.bg,borderTop:`1px solid ${C.border}`,display:"flex",flexShrink:0}}>
+        <NavBtn icon="✈️" label="FLEET"  active={page==="home"||page==="ac"} onClick={goHome}/>
+        <NavBtn icon="⚙️" label="LIMITS" active={page==="limits"} onClick={()=>setPage("limits")}/>
+        <NavBtn icon="⚠️" label="TABS"   active={page==="tabs"}   onClick={()=>setPage("tabs")}/>
+        <NavBtn icon="🆘" label="SEP"    active={page==="sep"}    onClick={()=>setPage("sep")}/>
+        <NavBtn icon="📚" label="REF"    active={page==="ref"}    onClick={()=>setPage("ref")}/>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
