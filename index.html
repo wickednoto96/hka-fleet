@@ -4,18 +4,18 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="HKA Fleet"/>
-<meta name="theme-color" content="#080f1e"/>
+<meta name="theme-color" content="#f0f4f8"/>
 <title>HKA Fleet Reference</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  html,body,#root{height:100%;width:100%;background:#080f1e;}
-  body{overflow:hidden;font-family:'Courier New',monospace;}
-  button{font-family:'Courier New',monospace;background:none;}
-  ::-webkit-scrollbar{width:4px;height:4px;}
-  ::-webkit-scrollbar-track{background:#080f1e;}
-  ::-webkit-scrollbar-thumb{background:#1e2d4a;border-radius:2px;}
+  html,body,#root{height:100%;width:100%;background:#f0f4f8;}
+  body{overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  button{font-family:inherit;background:none;cursor:pointer;}
+  ::-webkit-scrollbar{width:3px;height:3px;}
+  ::-webkit-scrollbar-track{background:#f0f4f8;}
+  ::-webkit-scrollbar-thumb{background:#cbd5e0;border-radius:2px;}
 </style>
 </head>
 <body>
@@ -26,61 +26,97 @@
 <script type="text/babel">
 const{useState,useEffect}=React;
 
-// ── TOKENS ────────────────────────────────────────────────────────────────────
+// ── COLOUR TOKENS (light theme) ───────────────────────────────────────────────
 const C={
-  bg:"#080f1e",panel:"#0d1525",border:"#1e2d4a",border2:"#1a2035",
-  text:"#c8d8f0",muted:"#556688",dim:"#334466",vdim:"#1e2d4a",
-  amber:"#f5a623",amberBg:"#2a1f00",amberBorder:"#3a2f00",
-  green:"#00cc66",greenBg:"#001a0f",greenBorder:"#003320",
-  red:"#ff4444",redBg:"#2a0808",redBorder:"#3a1010",
-  blue:"#44aaff",blueBg:"#001a2a",blueBorder:"#003355",
-  orange:"#ff7733",orangeBg:"#1a0c00",orangeBorder:"#3a2000",
+  bg:"#f0f4f8",
+  surface:"#ffffff",
+  surface2:"#f7fafc",
+  border:"#e2e8f0",
+  border2:"#edf2f7",
+  text:"#1a202c",
+  muted:"#718096",
+  dim:"#a0aec0",
+  // Accent colours
+  amber:"#b45309",    amberBg:"#fffbeb",  amberBorder:"#fcd34d", amberText:"#92400e",
+  green:"#15803d",    greenBg:"#f0fdf4",  greenBorder:"#86efac", greenText:"#14532d",
+  red:"#dc2626",      redBg:"#fef2f2",    redBorder:"#fca5a5",   redText:"#991b1b",
+  blue:"#1d4ed8",     blueBg:"#eff6ff",   blueBorder:"#93c5fd",  blueText:"#1e3a8a",
+  orange:"#c2410c",   orangeBg:"#fff7ed", orangeBorder:"#fdba74", orangeText:"#9a3412",
+  // Nav bar
+  nav:"#1e293b",      navText:"#94a3b8",  navActive:"#f59e0b",
 };
-const M="'Courier New',monospace";
 
 // ── MICRO COMPONENTS ──────────────────────────────────────────────────────────
 const Tag=({children,color="default"})=>{
-  const m={default:[C.panel,C.muted,C.border],amber:[C.amberBg,C.amber,C.amberBorder],
-    green:[C.greenBg,C.green,C.greenBorder],red:[C.redBg,C.red,C.redBorder],
-    blue:[C.blueBg,C.blue,C.blueBorder],orange:[C.orangeBg,C.orange,C.orangeBorder]};
+  const m={
+    default:[C.surface2,C.muted,C.border],
+    amber:[C.amberBg,C.amberText,C.amberBorder],
+    green:[C.greenBg,C.greenText,C.greenBorder],
+    red:[C.redBg,C.redText,C.redBorder],
+    blue:[C.blueBg,C.blueText,C.blueBorder],
+    orange:[C.orangeBg,C.orangeText,C.orangeBorder],
+  };
   const[bg,txt,bd]=m[color]||m.default;
-  return <span style={{display:"inline-block",padding:"2px 7px",borderRadius:4,fontSize:10,
-    fontFamily:M,fontWeight:700,letterSpacing:"0.05em",backgroundColor:bg,color:txt,border:`1px solid ${bd}`}}>{children}</span>;
+  return <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:11,
+    fontWeight:600,letterSpacing:"0.02em",backgroundColor:bg,color:txt,border:`1px solid ${bd}`}}>{children}</span>;
 };
+
 const Row=({label,value,hi})=>(
   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
-    padding:"7px 0",borderBottom:`1px solid ${C.border2}`,gap:12}}>
-    <span style={{color:C.muted,fontSize:11,fontFamily:M,flexShrink:0}}>{label}</span>
-    <span style={{color:hi?C.amber:C.text,fontSize:13,fontFamily:M,textAlign:"right",fontWeight:hi?"700":"400"}}>{value}</span>
+    padding:"9px 0",borderBottom:`1px solid ${C.border2}`,gap:12}}>
+    <span style={{color:C.muted,fontSize:12,flexShrink:0}}>{label}</span>
+    <span style={{color:hi?C.amberText:C.text,fontSize:13,textAlign:"right",
+      fontWeight:hi?"700":"500"}}>{value}</span>
   </div>
 );
+
 const Sec=({title,children})=>(
-  <div style={{marginBottom:16}}>
-    <div style={{fontSize:9,color:C.muted,letterSpacing:"0.15em",borderBottom:`1px solid ${C.border}`,paddingBottom:6,marginBottom:10}}>{title}</div>
+  <div style={{marginBottom:20}}>
+    <div style={{fontSize:10,color:C.muted,letterSpacing:"0.12em",fontWeight:700,textTransform:"uppercase",
+      borderBottom:`2px solid ${C.border}`,paddingBottom:6,marginBottom:12}}>{title}</div>
     {children}
   </div>
 );
+
 const Card=({children,color})=>{
   const bgs={amber:C.amberBg,red:C.redBg,green:C.greenBg,blue:C.blueBg,orange:C.orangeBg};
   const bds={amber:C.amberBorder,red:C.redBorder,green:C.greenBorder,blue:C.blueBorder,orange:C.orangeBorder};
-  return <div style={{padding:"10px 12px",marginBottom:6,borderRadius:6,
-    backgroundColor:bgs[color]||C.panel,border:`1px solid ${bds[color]||C.border}`}}>{children}</div>;
+  const lts={amber:"#f59e0b",red:C.red,green:C.green,blue:C.blue,orange:C.orange};
+  return(
+    <div style={{marginBottom:8,borderRadius:10,overflow:"hidden",backgroundColor:bgs[color]||C.surface,
+      border:`1px solid ${bds[color]||C.border}`,
+      borderLeft:`4px solid ${lts[color]||C.border}`}}>
+      <div style={{padding:"10px 14px"}}>{children}</div>
+    </div>
+  );
 };
+
 const Pill=({label,value,sub,color})=>{
-  const colors={amber:[C.amberBg,C.amber],blue:[C.blueBg,C.blue],green:[C.greenBg,C.green],red:[C.redBg,C.red]};
-  const[bg,txt]=colors[color]||[C.panel,C.amber];
-  return <div style={{padding:"10px 12px",backgroundColor:bg,borderRadius:6,border:`1px solid ${C.border}`,display:"flex",flexDirection:"column"}}>
-    <span style={{fontSize:10,color:C.muted,marginBottom:3}}>{label}</span>
-    <span style={{fontSize:18,color:txt,fontWeight:700,fontFamily:M,lineHeight:1}}>{value}</span>
-    {sub&&<span style={{fontSize:10,color:C.dim,marginTop:3}}>{sub}</span>}
-  </div>;
+  const cols={
+    amber:[C.amberBg,C.amberText,C.amberBorder],
+    blue:[C.blueBg,C.blueText,C.blueBorder],
+    green:[C.greenBg,C.greenText,C.greenBorder],
+    red:[C.redBg,C.redText,C.redBorder],
+  };
+  const[bg,txt,bd]=cols[color]||[C.surface,C.text,C.border];
+  return(
+    <div style={{padding:"12px 14px",backgroundColor:bg,borderRadius:10,border:`1px solid ${bd}`,
+      display:"flex",flexDirection:"column",gap:2}}>
+      <span style={{fontSize:10,color:C.muted,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>{label}</span>
+      <span style={{fontSize:22,color:txt,fontWeight:800,lineHeight:1}}>{value}</span>
+      {sub&&<span style={{fontSize:10,color:C.muted}}>{sub}</span>}
+    </div>
+  );
 };
+
 const NavBtn=({icon,label,active,onClick})=>(
   <button onClick={onClick} style={{flex:1,background:"none",border:"none",
-    borderTop:active?`2px solid ${C.amber}`:"2px solid transparent",
-    padding:"8px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-    <span style={{fontSize:18}}>{icon}</span>
-    <span style={{fontSize:9,fontFamily:M,color:active?C.amber:C.muted,letterSpacing:"0.05em"}}>{label}</span>
+    borderTop:active?`3px solid ${C.navActive}`:"3px solid transparent",
+    padding:"8px 4px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+    backgroundColor:C.nav}}>
+    <span style={{fontSize:20}}>{icon}</span>
+    <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.06em",
+      color:active?C.navActive:C.navText,textTransform:"uppercase"}}>{label}</span>
   </button>
 );
 
@@ -99,17 +135,17 @@ const FLEET=[
   {reg:"B-LPJ",model:"A320-214", msn:5514,engine:"CFM56-5B",    et:"CFM",yr:2013,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"8C/150Y Dual",dual:true, exitRow:"38/39",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["Hexagon life raft + survival kit: last row RHS O/H Locker","No PRM Row 51 (fixed armrest)"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
   {reg:"B-LPK",model:"A320-214", msn:5544,engine:"CFM56-5B",    et:"CFM",yr:2013,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:false,w:"34.1m",cfg:"8C/150Y Dual",dual:true, exitRow:"38/39",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["Hexagon life raft + survival kit: last row RHS O/H Locker","No PRM Row 51 (fixed armrest)","⚠️ Review PRO-SO-45 Engine Intermix Operations"],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 20 kts CW limit"]},
   {reg:"B-LPL",model:"A320-214S",msn:6003,engine:"CFM56-5B",    et:"CFM",yr:2014,prev:"HKA (new)",              fms:"THALES 1A (S7B/FG C14)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["Spurious CAT 2 INOP","FMS2 THALES TAB: DSC-22_20-100-30","Uncommanded Climb near T/D","Erroneous Alt Constraint after SID/STAR","Dual FMS Reset — DIR TO/ABEAM 3 STEP ALTs","Missing UPLINK Prompt","⚠️ Autoland auto rollout: 15 kts CW limit"]},
-  {reg:"B-LPM",model:"A320-214S",msn:6246,engine:"CFM56-5B",    et:"CFM",yr:2014,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
-  {reg:"B-LPN",model:"A320-214S",msn:6442,engine:"CFM56-5B",    et:"CFM",yr:2015,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
-  {reg:"B-LPO",model:"A320-214S",msn:6776,engine:"CFM56-5B",    et:"CFM",yr:2015,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
-  {reg:"B-LPW",model:"A321-231S",msn:6853,engine:"IAE V2500-A5",et:"IAE",yr:2016,prev:"Capital Airlines BJ",   fms:"THALES 2 (S8A/FG PI18)",   wl:true, w:"35.8m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:89400,mtow:89000,mlw:77800,mzfw:73800,min:47500},fuel:18605,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"NO",             wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE)",notes:["TCAS BLUE equipped","ELT Kannad 406 AS at R4 FWD O/H Locker"],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30"]},
-  {reg:"B-LPX",model:"A321-231S",msn:6863,engine:"IAE V2500-A5",et:"IAE",yr:2016,prev:"Capital Airlines BJ",   fms:"THALES 2 (S8A/FG PI18)",   wl:true, w:"35.8m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:89400,mtow:89000,mlw:77800,mzfw:73800,min:47500},fuel:18605,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"NO",             wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE)",notes:["⚠️ NO AUTOLAND with 1 ENGINE-OUT (removed)","TCAS BLUE equipped","ELT Kannad 406 AS at R4 FWD O/H Locker","E-321-26-001 (vital equipment)"],caut:["Spurious CAT 2 INOP","⚠️ NO AUTOLAND with 1 ENGINE-OUT (removed)","FMS2 THALES Rel2 TAB: DSC-22_20-100-30"]},
-  {reg:"B-LPP",model:"A320-214S",msn:7035,engine:"CFM56-5B",    et:"CFM",yr:2016,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
-  {reg:"B-LPQ",model:"A320-214S",msn:7077,engine:"CFM56-5B",    et:"CFM",yr:2016,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2 TAB: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPM",model:"A320-214S",msn:6246,engine:"CFM56-5B",    et:"CFM",yr:2014,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"Addl O2 x3 (32HJK O/H)", eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPN",model:"A320-214S",msn:6442,engine:"CFM56-5B",    et:"CFM",yr:2015,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPO",model:"A320-214S",msn:6776,engine:"CFM56-5B",    et:"CFM",yr:2015,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPW",model:"A321-231S",msn:6853,engine:"IAE V2500-A5",et:"IAE",yr:2016,prev:"Capital Airlines BJ",   fms:"THALES 2 (S8A/FG PI18)",   wl:true, w:"35.8m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:89400,mtow:89000,mlw:77800,mzfw:73800,min:47500},fuel:18605,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"NO",             wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE)",notes:["TCAS BLUE equipped","ELT Kannad 406 AS at R4 FWD O/H Locker"],caut:["FMS2 THALES Rel2: DSC-22_20-100-30"]},
+  {reg:"B-LPX",model:"A321-231S",msn:6863,engine:"IAE V2500-A5",et:"IAE",yr:2016,prev:"Capital Airlines BJ",   fms:"THALES 2 (S8A/FG PI18)",   wl:true, w:"35.8m",cfg:"220Y Mono",   dual:false,exitRow:"41/42 & 55/56",wts:{taxi:89400,mtow:89000,mlw:77800,mzfw:73800,min:47500},fuel:18605,crewMn:5,crewNm:6,prm:8, inf:15,um:"N/A", crBtn:"NO",             wifi:"NO", o2:"NO Addl O/H",             eL:"10min",cO2:"N/A",  ice:"Standard",    seats:"Swivel occupied. Mandatory: L1A, R2, R3, swivel (R4 or L4). L4=FP.",doors:"All Type C. D1&D4: Dual Lane Slide Raft. D2&D3: Emergency only — undetachable single escape slide. DISARM for ditching. Use Hexagon life raft.",fadec:"Keep-out N1 60–74% (IAE)",notes:["⚠️ NO AUTOLAND with 1 ENGINE-OUT (removed)","TCAS BLUE equipped","ELT Kannad 406 AS at R4 FWD O/H Locker","E-321-26-001 (vital equipment)"],caut:["Spurious CAT 2 INOP","⚠️ NO AUTOLAND with 1 ENGINE-OUT (removed)","FMS2 THALES Rel2: DSC-22_20-100-30"]},
+  {reg:"B-LPP",model:"A320-214S",msn:7035,engine:"CFM56-5B",    et:"CFM",yr:2016,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
+  {reg:"B-LPQ",model:"A320-214S",msn:7077,engine:"CFM56-5B",    et:"CFM",yr:2016,prev:"HKA (new)",              fms:"THALES 2 (S8A/FG PC20)",   wl:true, w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:75900,mtow:75500,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"YES",            wifi:"YES",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"4/5+swivel",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:[],caut:["FMS2 THALES Rel2: DSC-22_20-100-30","⚠️ Autoland auto rollout: 15 kts CW limit"]},
   {reg:"B-LPZ",model:"A320-214", msn:7966,engine:"CFM56-5B",    et:"CFM",yr:2017,prev:"Vanilla Air / Peach",   fms:"HONEYWELL 1A (H2C/FG PC18)",wl:true,w:"35.8m",cfg:"174Y Mono",   dual:false,exitRow:"42/43",        wts:{taxi:77400,mtow:77000,mlw:66000,mzfw:62500,min:37230},fuel:18968,crewMn:4,crewNm:4,prm:4, inf:2, um:10,  crBtn:"TBC",            wifi:"TBC",o2:"NO Addl O/H",             eL:"12min",cO2:"22min",ice:"Standard",    seats:"TBC",doors:"D1&D2: Type C, Dual Lane Slide Raft. Emer exit Type III.",fadec:"Standard CFM",notes:["⚠️ DATA PENDING — CONFIRM WHEN AIRCRAFT RELEASED"],caut:["⚠️ ALL data TBC — verify before any ops","FMS2 HONEYWELL TAB likely applies — confirm on release"]},
 ];
 
-// ── LIMITS ────────────────────────────────────────────────────────────────────
+// ── LIMITS ─────────────────────────────────────────────────────────────────────
 const EGT=[
   {p:"T/O & GA (all eng.) 5 min",cfm:"950°C",iA320:"635°C",iA321:"650°C"},
   {p:"T/O & GA (1 eng.)",        cfm:"950°C",iA320:"635°C",iA321:"650°C"},
@@ -139,42 +175,36 @@ const WIND=[
   {c:"Headwind — T/O & Landing",         a320:"50 kts",        a321:"50 kts"},
   {c:"Headwind — Autoland",              a320:"30 kts",        a321:"CAT II 40 / CAT III 30"},
   {c:"CW Autoland (no auto rollout)",     a320:"20 kts",        a321:"CAT II 25 / CAT III 30"},
-  {c:"CW Autoland (with auto rollout) *", a320:"15* / 20** kts",a321:"20 kts"},
+  {c:"CW Autoland (with auto rollout)*",  a320:"15* / 20** kts",a321:"20 kts"},
   {c:"Tailwind — Autoland",              a320:"10 kts",        a321:"10 kts"},
   {c:"Wind — Door operation",            a320:"65 kts",        a321:"65 kts"},
 ];
-
-// ── TABS DATA ─────────────────────────────────────────────────────────────────
 const TABS_DATA=[
-  {g:"ALL AIRCRAFT",col:"red",regs:"All HKA A320/A321 fleet",items:["AUTO FLT: Misbehavior of Enhanced LOC Capture Function","AUTO FLT: Unexpected G/S Mode Armed","DATA LINK: ATC MSG RECORD NOT RELIABLE — Displayed at ATSU Power-Up","DOORS: Erroneous Activation of cabin pressure warning lights without Residual Diff. Pressure"]},
-  {g:"FMS2 HONEYWELL — DSC-22_20-100-20",col:"blue",regs:"B-LPS, B-LPT, B-LPU",items:["AUTO FLT: Incorrect Management of SPD CSTR for Arrival Procedure Holds","AUTO FLT: Erroneous Fuel Prediction — Descent with 2 Altitude Constraints","AUTO FLT: Erroneous Lateral Guidance in NAV with LOC Armed during Approach","AUTO FLT: Erroneous Trajectory — Procedures with Turn Direction on Altitude Termination Leg","AUTO FLT: No Engagement of PRESEL SPD TARGET in Climb","AUTO FLT: Erroneous Managed Approach Speed after Descent wind uplink","AUTO FLT: Misalignment of FMS F-PLN Legs for ILS Approaches","AUTO FLT: Incorrect Management of ETA Entry on Predictive GPS Page","AUTO FLT: Flight Number Erased Upon AOC Flight Plan Uplink","AUTO FLT: Unexpected Switch of Speed Target when RTA Is Used","AUTO FLT: VOR/DME and VOR/TACAN Not Automatically Tuned","AUTO FLT: Optimum Target Speeds not updated after Automatic Deletion of Step Climb","AUTO FLT: Undue reduction of Speed Target — DIR/ABEAM on constant Mach Segment","AUTO FLT: Loss of Fuel and Time Predictions during Takeoff Data Insertion","AUTO FLT: Erroneous Vertical Profile — LOC B/C with MAP before runway threshold","AUTO FLT: Erroneous Vertical Guidance in Approach — DIR TO near Top of Descent","AUTO FLT: Erroneous CF Leg — FMS NEW RUNWAY with LS IDENT creation","AUTO FLT: Unexpected ILS Auto-tuning","AUTO FLT: Inadvertent T.O. Data Reversion Upon RWY Change","SURV: Weather Radar Performance above 80 NM (B-LPS, B-LPT only)"]},
+  {g:"ALL AIRCRAFT",col:"red",regs:"Applies to entire HKA A320/A321 fleet",items:["AUTO FLT: Misbehavior of Enhanced LOC Capture Function","AUTO FLT: Unexpected G/S Mode Armed","DATA LINK: ATC MSG RECORD NOT RELIABLE — Displayed at ATSU Power-Up","DOORS: Erroneous Activation of cabin pressure warning lights without Residual Diff. Pressure"]},
+  {g:"FMS2 HONEYWELL — DSC-22_20-100-20",col:"blue",regs:"B-LPS, B-LPT, B-LPU",items:["AUTO FLT: Incorrect Management of SPD CSTR for Arrival Procedure Holds","AUTO FLT: Erroneous Fuel Prediction — Descent with 2 Altitude Constraints","AUTO FLT: Erroneous Lateral Guidance in NAV with LOC Armed during Approach","AUTO FLT: Erroneous Trajectory — Turn Direction on Altitude Termination Leg","AUTO FLT: No Engagement of PRESEL SPD TARGET in Climb","AUTO FLT: Erroneous Managed Approach Speed after Descent wind uplink","AUTO FLT: Misalignment of FMS F-PLN Legs for ILS Approaches","AUTO FLT: Incorrect Management of ETA Entry on Predictive GPS Page","AUTO FLT: Flight Number Erased Upon AOC Flight Plan Uplink","AUTO FLT: Unexpected Switch of Speed Target when RTA Is Used","AUTO FLT: VOR/DME and VOR/TACAN Not Automatically Tuned","AUTO FLT: Optimum Target Speeds not updated after Deletion of Step Climb","AUTO FLT: Undue reduction of Speed Target — DIR/ABEAM on constant Mach Segment","AUTO FLT: Loss of Fuel and Time Predictions during Takeoff Data Insertion","AUTO FLT: Erroneous Vertical Profile — LOC B/C with MAP before runway threshold","AUTO FLT: Erroneous Vertical Guidance — DIR TO near Top of Descent","AUTO FLT: Erroneous CF Leg — FMS NEW RUNWAY with LS IDENT creation","AUTO FLT: Unexpected ILS Auto-tuning","AUTO FLT: Inadvertent T.O. Data Reversion Upon RWY Change","SURV: Weather Radar Performance above 80 NM (B-LPS, B-LPT only)"]},
   {g:"FMS2 THALES — DSC-22_20-100-30 (All THALES)",col:"amber",regs:"B-LPR, B-LPC, B-LPV, B-LPD, B-LPE, B-LPI, B-LPJ, B-LPK, B-LPL, B-LPM, B-LPN, B-LPO, B-LPP, B-LPQ, B-LPW, B-LPX, B-LPY",items:["AUTO FLT: MCDU Frozen — crew accessed DIR TO / HOLD / OFFSET","AUTO FLT: Erroneous Cross Track Error / FD Orders after DIR TO on Aligned Waypoint","AUTO FLT: Erroneous Fuel Predictions — Descent with 2 Altitude Constraints","AUTO FLT: Erroneous Trajectory — HDG/TRK Mode with Turn Direction on Altitude Termination Leg","AUTO FLT: Waypoint Not Sequenced After DIR TO RADIAL IN","AUTO FLT: Unexpected DECELERATE on MCDU (and T/D REACHED on PFD) during Climb","AUTO FLT: FMS Reset upon crossing the 180th Meridian","AUTO FLT: Unexpected early CLB Mode after T/O with QFE setting","AUTO FLT: Unusable MIN DEST FOB Value in Secondary Flight Plan"]},
   {g:"FMS2 THALES 1A — Additional",col:"orange",regs:"B-LPR, B-LPC, B-LPV, B-LPD, B-LPE, B-LPI, B-LPJ, B-LPK, B-LPL",items:["AUTO FLT: Erroneous Lateral Guidance in NAV with LOC Armed during Approach","AUTO FLT: Uncommanded Climb near Top of Descent (T/D)","AUTO FLT: Erroneous Altitude Constraint after SID or STAR Selection Change","AUTO FLT: Dual FMS Reset with Loss of Data — DIR TO/ABEAM with 3 STEP ALTS","AUTO FLT: Missing or Incorrect UPLINK Prompt on UPLINK T.O DATA Page"]},
   {g:"Spurious CAT 2 INOP + Erroneous Vertical Profile",col:"red",regs:"B-LPR, B-LPS, B-LPT, B-LPY, B-LPW, B-LPX, B-LPC, B-LPV, B-LPD, B-LPE, B-LPI, B-LPU, B-LPJ, B-LPK, B-LPL",items:["AUTO FLT: Spurious CAT 2 INOP","AUTO FLT: Erroneous Vertical Profile in Final Approach"]},
   {g:"B-LPR Specific",col:"red",regs:"B-LPR only",items:["ENG: Reduction of Stall Margin during Descent"]},
 ];
-
-// ── SEP DATA ──────────────────────────────────────────────────────────────────
 const PREG=[
   {w:"< 28 weeks (Single or Multiple)",  fly:true, req:"No medical certificate required (ref. OM-E)"},
   {w:"28–35 wks +6 days (Single)",        fly:true, req:"Medical cert required: Fit to fly, issued within 7 days, EDD, weeks of pregnancy, single/multiple."},
   {w:"28–31 wks +6 days (Multiple)",      fly:true, req:"Medical cert required: Fit to fly, issued within 7 days, EDD, weeks of pregnancy, single/multiple."},
-  {w:"Single ≥ 36 weeks",                fly:false,req:"NO FLY"},
-  {w:"Multiple ≥ 32 weeks",              fly:false,req:"NO FLY"},
+  {w:"Single ≥ 36 weeks",               fly:false, req:"NO FLY"},
+  {w:"Multiple ≥ 32 weeks",             fly:false, req:"NO FLY"},
 ];
 const EQUIP=[
-  {n:"BCF (Halon 1211)",           ck:["Secure in position","Red disc intact","Safety catch intact","Discharge: 10 s from 8–10 ft"]},
-  {n:"BCF Air Total",              ck:["Secure in position","Black safety lever intact with wire seal","Pressure gauge needle in GREEN zone","Discharge: 10 s from 6 ft (2 m)"]},
-  {n:"PBE Smoke Hood (Type A/B)", ck:["Secure in position","Package intact","'Ready to use' green indicator visible","Max duration: 15 min"]},
-  {n:"Drager (PBE Oxycrew)",      ck:["Secure in position","Package intact","Paper seal intact","Red securing clamp intact","Activation: pull toggle","Max duration: 15 min"]},
+  {n:"BCF (Halon 1211)",          ck:["Secure in position","Red disc intact","Safety catch intact","Discharge: 10 s from 8–10 ft"]},
+  {n:"BCF Air Total",             ck:["Secure in position","Black safety lever intact with wire seal","Pressure gauge needle in GREEN zone","Discharge: 10 s from 6 ft (2 m)"]},
+  {n:"PBE Smoke Hood (Type A/B)",ck:["Secure in position","Package intact","'Ready to use' green indicator visible","Max duration: 15 min"]},
+  {n:"Drager (PBE Oxycrew)",     ck:["Secure in position","Package intact","Paper seal intact","Red securing clamp intact","Activation: pull toggle","Max duration: 15 min"]},
   {n:"Protective Gloves (leather)",ck:["In position","Paper seal intact"]},
-  {n:"Cotton Gloves",              ck:["In position","In pair"]},
-  {n:"Megaphone",                  ck:["Secure in position","Carrying case intact"]},
-  {n:"ELT",                        ck:["Secure in position","Red indicator light flashes every 5–10 sec"]},
-  {n:"Flashlight / Torch",         ck:["Secure in position","Slide ON/OFF switch to verify serviceability"]},
+  {n:"Cotton Gloves",             ck:["In position","In pair"]},
+  {n:"Megaphone",                 ck:["Secure in position","Carrying case intact"]},
+  {n:"ELT",                       ck:["Secure in position","Red indicator light flashes every 5–10 sec"]},
+  {n:"Flashlight / Torch",        ck:["Secure in position","Slide ON/OFF switch to verify serviceability"]},
 ];
-
-// ── DOC REF ───────────────────────────────────────────────────────────────────
 const DOCS=[
   {d:"AFM",  col:"red",   items:["Approval data","General","Limitations","Emergency procedures","Abnormal procedures","Normal procedures","Performance (dry & wet runway)","Appendices and supplements","Master Configuration Deviation List (MCDL)","Supplementary performance (contaminated runway)","Regulatory differences (when applicable)"]},
   {d:"FCOM", col:"amber", items:["General information (config summary, QRH, definitions, abbreviations)","Aircraft systems","Procedures","Limitations","Temporary Abnormal Behaviors (TAB)","Performance (EFB)"]},
@@ -191,24 +221,27 @@ const TERMS=[
   {t:"TDU",              col:"default",def:"Temporary Documentary Unit."},
 ];
 
-// ── SHARED COMPONENTS ──────────────────────────────────────────────────────────
+// ── SHARED ────────────────────────────────────────────────────────────────────
 const LimTable=({rows})=>(
-  <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:M,minWidth:320}}>
+  <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",borderRadius:10,border:`1px solid ${C.border}`}}>
+    <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:300}}>
       <thead>
-        <tr>
-          {["",<span style={{color:C.green}}>CFM A320</span>,<span style={{color:C.blue}}>IAE A320</span>,<span style={{color:C.blue}}>IAE A321</span>].map((h,i)=>(
-            <th key={i} style={{padding:"6px 8px",borderBottom:`1px solid ${C.border}`,color:C.muted,textAlign:i===0?"left":"center",fontSize:10,whiteSpace:"nowrap"}}>{h}</th>
+        <tr style={{backgroundColor:C.surface2}}>
+          {["",<span style={{color:C.greenText,fontWeight:700}}>CFM A320</span>,
+              <span style={{color:C.blueText,fontWeight:700}}>IAE A320</span>,
+              <span style={{color:C.blueText,fontWeight:700}}>IAE A321</span>].map((h,i)=>(
+            <th key={i} style={{padding:"8px 10px",borderBottom:`1px solid ${C.border}`,
+              textAlign:i===0?"left":"center",fontSize:11,color:C.muted,fontWeight:600}}>{h}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {rows.map((r,i)=>(
-          <tr key={i} style={{borderBottom:`1px solid ${C.border2}`}}>
-            <td style={{padding:"7px 8px",color:C.muted,fontSize:10}}>{r.p}</td>
-            <td style={{padding:"7px 8px",color:C.green,textAlign:"center",fontWeight:700}}>{r.cfm}</td>
-            <td style={{padding:"7px 8px",color:C.blue, textAlign:"center",fontWeight:700}}>{r.iA320}</td>
-            <td style={{padding:"7px 8px",color:C.blue, textAlign:"center",fontWeight:700}}>{r.iA321}</td>
+          <tr key={i} style={{backgroundColor:i%2===0?C.surface:C.surface2}}>
+            <td style={{padding:"9px 10px",color:C.muted,fontSize:11,borderBottom:`1px solid ${C.border2}`}}>{r.p}</td>
+            <td style={{padding:"9px 10px",color:C.greenText,textAlign:"center",fontWeight:700,borderBottom:`1px solid ${C.border2}`}}>{r.cfm}</td>
+            <td style={{padding:"9px 10px",color:C.blueText,textAlign:"center",fontWeight:700,borderBottom:`1px solid ${C.border2}`}}>{r.iA320}</td>
+            <td style={{padding:"9px 10px",color:C.blueText,textAlign:"center",fontWeight:700,borderBottom:`1px solid ${C.border2}`}}>{r.iA321}</td>
           </tr>
         ))}
       </tbody>
@@ -216,36 +249,49 @@ const LimTable=({rows})=>(
   </div>
 );
 
-// ── PAGES ─────────────────────────────────────────────────────────────────────
+// ── PAGE COMPONENTS ───────────────────────────────────────────────────────────
 function AcGrid({onSel}){
   const[flt,setFlt]=useState("ALL");
   const shown=FLEET.filter(f=>flt==="ALL"||(flt==="A321"?f.model.includes("321"):f.model.includes("320")));
   return(
     <div style={{padding:12}}>
-      <div style={{padding:"8px 12px",marginBottom:12,backgroundColor:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,fontSize:11,color:C.amber}}>
-        ⚠️ ALL AIRCRAFT — Rain repellent deactivated fleet-wide
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 14px",
+        backgroundColor:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:10,
+        borderLeft:`4px solid ${C.amber}`}}>
+        <span style={{fontSize:16}}>⚠️</span>
+        <span style={{fontSize:12,color:C.amberText,fontWeight:600}}>ALL AIRCRAFT — Rain repellent deactivated fleet-wide</span>
       </div>
-      <div style={{display:"flex",gap:6,marginBottom:12,alignItems:"center"}}>
+      <div style={{display:"flex",gap:6,marginBottom:14,alignItems:"center"}}>
         {["ALL","A320","A321"].map(f=>(
-          <button key={f} onClick={()=>setFlt(f)} style={{padding:"4px 12px",border:`1px solid ${flt===f?C.amber:C.border}`,backgroundColor:flt===f?C.amberBg:"transparent",color:flt===f?C.amber:C.muted,borderRadius:4,fontSize:11,fontFamily:M,cursor:"pointer"}}>{f}</button>
+          <button key={f} onClick={()=>setFlt(f)} style={{
+            padding:"6px 16px",borderRadius:20,fontSize:12,fontWeight:600,
+            border:`1.5px solid ${flt===f?C.blue:C.border}`,
+            backgroundColor:flt===f?C.blueBg:"transparent",
+            color:flt===f?C.blueText:C.muted}}>
+            {f}
+          </button>
         ))}
-        <span style={{marginLeft:"auto",color:C.dim,fontSize:11}}>{shown.length} ACFT</span>
+        <span style={{marginLeft:"auto",color:C.dim,fontSize:12,fontWeight:500}}>{shown.length} aircraft</span>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
         {shown.map(ac=>(
-          <button key={ac.reg} onClick={()=>onSel(ac.reg)} style={{background:"none",backgroundColor:C.panel,border:`1px solid ${C.border}`,borderRadius:8,padding:"14px 12px",cursor:"pointer",textAlign:"left",position:"relative",overflow:"hidden"}}>
-            {ac.model.includes("321")&&<div style={{position:"absolute",top:0,right:0,width:4,height:"100%",backgroundColor:"#003366"}}/>}
-            <div style={{fontSize:17,fontWeight:700,color:C.amber,marginBottom:4,fontFamily:M}}>{ac.reg}</div>
-            <div style={{fontSize:11,color:"#8899bb",marginBottom:6,fontFamily:M}}>{ac.model}</div>
+          <button key={ac.reg} onClick={()=>onSel(ac.reg)} style={{
+            background:"none",backgroundColor:C.surface,
+            border:`1px solid ${C.border}`,borderRadius:12,
+            padding:"14px 12px",cursor:"pointer",textAlign:"left",
+            boxShadow:"0 1px 3px rgba(0,0,0,0.06)",
+            borderTop: ac.model.includes("321")?`3px solid ${C.blue}`:`3px solid ${C.border}`}}>
+            <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:2}}>{ac.reg}</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:500}}>{ac.model}</div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               <Tag color={ac.et==="IAE"?"blue":"green"}>{ac.et}</Tag>
               {ac.wl&&<Tag color="amber">WLGT</Tag>}
-              {ac.dual&&<Tag color="amber">2CLS</Tag>}
+              {ac.dual&&<Tag color="orange">2CLS</Tag>}
               {ac.ice!=="Standard"&&<Tag color="red">NO ICE</Tag>}
               {(ac.wifi==="NO"||ac.wifi==="TBC")&&<Tag>NO WIFI</Tag>}
               {ac.reg==="B-LPZ"&&<Tag color="red">TBC</Tag>}
             </div>
-            <div style={{marginTop:8,fontSize:11,color:C.dim,fontFamily:M}}>{ac.cfg}</div>
+            <div style={{marginTop:8,fontSize:12,color:C.muted,fontWeight:500}}>{ac.cfg}</div>
           </button>
         ))}
       </div>
@@ -258,90 +304,107 @@ function AcDetail({reg}){
   const a=FLEET.find(f=>f.reg===reg);
   if(!a)return null;
   const is321=a.model.includes("321");
-  const tabs=["General","Weights","SEP/Cabin","Cautions"];
+  const TABS=["General","Weights","SEP/Cabin","Cautions"];
   return(
     <div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"12px 12px 0"}}>
         <Tag color={a.et==="IAE"?"blue":"green"}>{a.engine}</Tag>
-        <Tag color={a.wl?"amber":"default"}>{a.wl?`WLGT ${a.w}`:`NO WLGT ${a.w}`}</Tag>
-        {a.dual&&<Tag color="amber">DUAL CLASS</Tag>}
+        <Tag color={a.wl?"amber":"default"}>{a.wl?`WLGT ${a.w}`:`No Winglet ${a.w}`}</Tag>
+        {a.dual&&<Tag color="orange">DUAL CLASS</Tag>}
         {a.ice!=="Standard"&&<Tag color="red">NO ICE DETECT</Tag>}
-        <Tag color={a.wifi==="YES"?"green":"red"}>WIFI {a.wifi}</Tag>
+        <Tag color={a.wifi==="YES"?"green":"red"}>WiFi {a.wifi}</Tag>
         {a.reg==="B-LPZ"&&<Tag color="red">DATA TBC</Tag>}
       </div>
-      <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,margin:"12px 0 0"}}>
-        {tabs.map((t,i)=>(
-          <button key={t} onClick={()=>setTab(i)} style={{flex:1,padding:"8px 2px",border:"none",borderBottom:i===tab?`2px solid ${C.amber}`:"2px solid transparent",backgroundColor:"transparent",color:i===tab?C.amber:C.dim,fontSize:10,fontFamily:M,cursor:"pointer",fontWeight:i===tab?"700":"400"}}>{t}</button>
+      <div style={{display:"flex",borderBottom:`2px solid ${C.border}`,margin:"12px 0 0",
+        backgroundColor:C.surface}}>
+        {TABS.map((t,i)=>(
+          <button key={t} onClick={()=>setTab(i)} style={{flex:1,padding:"10px 4px",border:"none",
+            borderBottom:i===tab?`2px solid ${C.blue}`:"2px solid transparent",
+            backgroundColor:"transparent",color:i===tab?C.blueText:C.muted,
+            fontSize:11,fontWeight:i===tab?"700":"500",marginBottom:-2}}>
+            {t}
+          </button>
         ))}
       </div>
       <div style={{padding:12}}>
         {tab===0&&<>
-          <Row label="PREV OP" value={a.prev}/>
-          <Row label="REG YEAR" value={a.yr}/>
+          <Row label="Previous Operator" value={a.prev}/>
+          <Row label="Year Registered" value={a.yr}/>
           <Row label="MSN" value={a.msn}/>
           <Row label="FMS" value={a.fms} hi/>
-          <Row label="ENGINE" value={a.engine}/>
+          <Row label="Engine" value={a.engine}/>
           <Row label="FADEC" value={a.fadec}/>
-          <Row label="CONFIG" value={a.cfg} hi/>
-          <Row label="EXIT ROW" value={a.exitRow} hi/>
-          <Row label="CREW SEATS" value={a.seats}/>
-          {is321&&<><Row label="MIN CREW" value={a.crewMn}/><Row label="NORM CREW" value={a.crewNm}/></>}
-          <Row label="WIFI" value={a.wifi} hi={a.wifi!=="YES"}/>
-          <Row label="CABIN RDY BTN" value={a.crBtn} hi={a.crBtn==="NO"}/>
-          <Row label="FUEL CAP" value={`${a.fuel.toLocaleString()} Kg`} hi/>
-          <Row label="O2" value={a.o2}/>
-          <Row label="EMERG LIGHTING" value={a.eL}/>
-          {a.cO2!=="N/A"&&<Row label="CABIN O2" value={a.cO2}/>}
-          <Row label="ICE DETECT" value={a.ice} hi={a.ice!=="Standard"}/>
-          {a.notes.length>0&&<Card color={a.notes.some(n=>n.startsWith("⚠️"))?"amber":"default"}>
-            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>NOTES</div>
-            {a.notes.map((n,i)=><div key={i} style={{fontSize:12,color:n.startsWith("⚠️")?C.amber:"#8899bb",marginBottom:5,lineHeight:1.5}}>{n}</div>)}
-          </Card>}
+          <Row label="Config" value={a.cfg} hi/>
+          <Row label="Exit Row" value={a.exitRow} hi/>
+          <Row label="Crew Seats" value={a.seats}/>
+          {is321&&<><Row label="Min Crew" value={a.crewMn}/><Row label="Norm Crew" value={a.crewNm}/></>}
+          <Row label="WiFi" value={a.wifi} hi={a.wifi!=="YES"}/>
+          <Row label="Cabin Ready Btn" value={a.crBtn} hi={a.crBtn==="NO"}/>
+          <Row label="Fuel Capacity" value={`${a.fuel.toLocaleString()} Kg`} hi/>
+          <Row label="O2 Overhead" value={a.o2}/>
+          <Row label="Emerg Lighting" value={a.eL}/>
+          {a.cO2!=="N/A"&&<Row label="Cabin O2" value={a.cO2}/>}
+          <Row label="Ice Detection" value={a.ice} hi={a.ice!=="Standard"}/>
+          {a.notes.length>0&&<div style={{marginTop:12}}>
+            <Card color={a.notes.some(n=>n.startsWith("⚠️"))?"amber":"default"}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Notes</div>
+              {a.notes.map((n,i)=><div key={i} style={{fontSize:12,color:n.startsWith("⚠️")?C.amberText:C.muted,marginBottom:5,lineHeight:1.5}}>{n}</div>)}
+            </Card>
+          </div>}
         </>}
         {tab===1&&<>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-            <Pill label="MAX TAXI WT" value={a.wts.taxi.toLocaleString()} sub="kg" color="amber"/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+            <Pill label="Max Taxi Weight" value={a.wts.taxi.toLocaleString()} sub="kg" color="amber"/>
             <Pill label="MTOW" value={a.wts.mtow.toLocaleString()} sub="kg" color="amber"/>
             <Pill label="MLW" value={a.wts.mlw.toLocaleString()} sub="kg" color="blue"/>
             <Pill label="MZFW" value={a.wts.mzfw.toLocaleString()} sub="kg" color="blue"/>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-            <Pill label="MIN WEIGHT" value={a.wts.min.toLocaleString()} sub="kg" color="green"/>
-            <Pill label="FUEL CAP" value={a.fuel.toLocaleString()} sub="kg" color="amber"/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+            <Pill label="Min Weight" value={a.wts.min.toLocaleString()} sub="kg" color="green"/>
+            <Pill label="Fuel Capacity" value={a.fuel.toLocaleString()} sub="kg" color="amber"/>
           </div>
           <Card>
-            <div style={{fontSize:10,color:C.muted,marginBottom:6}}>LB ↔ KG CONVERSION</div>
-            <div style={{fontSize:12,color:C.muted,fontFamily:M}}>LB → KG  ×  0.453592</div>
-            <div style={{fontSize:12,color:C.muted,fontFamily:M}}>KG → LB  ×  2.204622</div>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"}}>LB ↔ KG Conversion</div>
+            <div style={{fontSize:13,color:C.text}}>LB → KG  ×  0.453592</div>
+            <div style={{fontSize:13,color:C.text,marginTop:4}}>KG → LB  ×  2.204622</div>
           </Card>
         </>}
         {tab===2&&<>
           <Row label="PRM (self-reliant)" value={a.prm} hi/>
-          <Row label="INFANTS MAX" value={a.inf===2?"2 (1 CRD + 1 CRS)":a.inf}/>
+          <Row label="Infants Max" value={a.inf===2?"2 (1 CRD + 1 CRS)":a.inf}/>
           <Row label="UM (6–12 yrs)" value={typeof a.um==="number"?`Max ${a.um} — >6 = extra crew`:a.um}/>
           <Row label="YP (12–15 yrs)" value="No limitation"/>
-          <Row label="EMERG LIGHTING" value={a.eL} hi/>
-          {a.cO2!=="N/A"&&<Row label="CABIN O2 DURATION" value={a.cO2} hi/>}
-          <Row label="ADDITIONAL O2" value={a.o2} hi={a.o2.startsWith("Addl")}/>
-          <Card>
-            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>DOORS</div>
-            <div style={{fontSize:12,color:"#8899bb",lineHeight:1.6}}>{a.doors}</div>
-          </Card>
-          {is321&&<Card color="orange">
-            <div style={{fontSize:10,color:C.orange,marginBottom:4}}>A321 — CREW POSITIONING</div>
-            <div style={{fontSize:12,color:"#cc8844",lineHeight:1.6}}>{a.seats}</div>
-          </Card>}
+          <Row label="Emerg Lighting" value={a.eL} hi/>
+          {a.cO2!=="N/A"&&<Row label="Cabin O2 Duration" value={a.cO2} hi/>}
+          <Row label="Additional O2" value={a.o2} hi={a.o2.startsWith("Addl")}/>
+          <div style={{marginTop:12}}>
+            <Card>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"}}>Doors</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.7}}>{a.doors}</div>
+            </Card>
+            {is321&&<Card color="orange">
+              <div style={{fontSize:11,fontWeight:700,color:C.orangeText,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.05em"}}>A321 — Crew Positioning</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.7}}>{a.seats}</div>
+            </Card>}
+          </div>
         </>}
         {tab===3&&<>
-          {a.caut.map((c,i)=>(
-            <div key={i} style={{padding:"10px 12px",marginBottom:6,borderRadius:6,
-              backgroundColor:c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND")?C.redBg:C.panel,
-              border:`1px solid ${c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND")?C.redBorder:C.border}`,
-              fontSize:12,color:c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND")?"#ff6644":"#8899bb",lineHeight:1.5,fontFamily:M}}>
-              {c}
-            </div>
-          ))}
-          <Card color="green"><div style={{fontSize:11,color:C.green}}>ⓘ Verify all TABs in FCOM before flight. Non-official reference only.</div></Card>
+          {a.caut.map((c,i)=>{
+            const isWarn=c.startsWith("⚠️")||c.includes("INOP")||c.includes("NO AUTOLAND");
+            return(
+              <div key={i} style={{padding:"10px 14px",marginBottom:8,borderRadius:10,
+                backgroundColor:isWarn?C.redBg:C.surface,
+                border:`1px solid ${isWarn?C.redBorder:C.border}`,
+                borderLeft:`4px solid ${isWarn?C.red:"#cbd5e0"}`,
+                fontSize:12,color:isWarn?C.redText:C.text,lineHeight:1.6}}>
+                {c}
+              </div>
+            );
+          })}
+          <div style={{padding:"10px 14px",borderRadius:10,backgroundColor:C.greenBg,
+            border:`1px solid ${C.greenBorder}`,fontSize:12,color:C.greenText,marginTop:4}}>
+            ⓘ Always verify TABs in FCOM before flight. Non-official reference only.
+          </div>
         </>}
       </div>
     </div>
@@ -352,47 +415,99 @@ function LimitsPage(){
   const[sub,setSub]=useState("EGT");
   return(
     <div>
-      <div style={{display:"flex",overflowX:"auto",gap:4,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`,WebkitOverflowScrolling:"touch"}}>
+      <div style={{display:"flex",overflowX:"auto",gap:6,padding:"12px 12px 0",
+        borderBottom:`1px solid ${C.border}`,WebkitOverflowScrolling:"touch",backgroundColor:C.surface}}>
         {["EGT","OIL","START","FLEX","WIND","REV"].map(s=>(
-          <button key={s} onClick={()=>setSub(s)} style={{flexShrink:0,padding:"6px 12px",border:`1px solid ${sub===s?C.amber:C.border}`,backgroundColor:sub===s?C.amberBg:"transparent",color:sub===s?C.amber:C.muted,borderRadius:4,fontSize:10,fontFamily:M,cursor:"pointer"}}>{s}</button>
+          <button key={s} onClick={()=>setSub(s)} style={{flexShrink:0,padding:"6px 14px",
+            border:`1.5px solid ${sub===s?C.blue:C.border}`,
+            backgroundColor:sub===s?C.blueBg:"transparent",
+            color:sub===s?C.blueText:C.muted,
+            borderRadius:20,fontSize:11,fontWeight:600,marginBottom:8}}>
+            {s}
+          </button>
         ))}
       </div>
       <div style={{padding:12}}>
-        {sub==="EGT"&&<Sec title="EGT / N1 / N2 LIMITS"><LimTable rows={EGT}/></Sec>}
-        {sub==="OIL"&&<Sec title="OIL LIMITS"><LimTable rows={OIL}/></Sec>}
+        {sub==="EGT"&&<Sec title="EGT / N1 / N2 Limits"><LimTable rows={EGT}/></Sec>}
+        {sub==="OIL"&&<Sec title="Oil Limits"><LimTable rows={OIL}/></Sec>}
         {sub==="START"&&<>
-          <Sec title="CFM — ENGINE START">{START_CFM.map((s,i)=><Card key={i}><span style={{color:C.green,fontWeight:700}}>CFM </span><span style={{fontSize:12,color:"#8899bb"}}>{s}</span></Card>)}</Sec>
-          <Sec title="IAE — ENGINE START">{START_IAE.map((s,i)=><Card key={i}><span style={{color:C.blue,fontWeight:700}}>IAE </span><span style={{fontSize:12,color:"#8899bb"}}>{s}</span></Card>)}</Sec>
+          <Sec title="CFM — Engine Start Rules">
+            {START_CFM.map((s,i)=>(
+              <Card key={i} color="green">
+                <div style={{fontSize:12,color:C.text,lineHeight:1.5}}>
+                  <span style={{color:C.greenText,fontWeight:700}}>CFM  </span>{s}
+                </div>
+              </Card>
+            ))}
+          </Sec>
+          <Sec title="IAE — Engine Start Rules">
+            {START_IAE.map((s,i)=>(
+              <Card key={i} color="blue">
+                <div style={{fontSize:12,color:C.text,lineHeight:1.5}}>
+                  <span style={{color:C.blueText,fontWeight:700}}>IAE  </span>{s}
+                </div>
+              </Card>
+            ))}
+          </Sec>
         </>}
-        {sub==="FLEX"&&<Sec title="FLEX TAKEOFF — TFLEX LIMITS">
-          {[{l:"A320 CFM — Max TFLEX",v:"ISA + 53°C",c:"green"},{l:"A321 IAE — Max TFLEX",v:"ISA + 42°C",c:"blue"},{l:"A320 IAE — Max TFLEX",v:"ISA + 71°C",c:"amber"},{l:"Min TFLEX",v:"NOT lower than TREF (flat temp)",c:"red"},{l:"Min TFLEX",v:"NOT lower than actual OAT",c:"red"},{l:"IAE crosswind start (A321/A320)",v:"Up to 35 kts",c:"amber"}].map((f,i)=>(
+        {sub==="FLEX"&&<Sec title="Flex Takeoff — TFLEX Limits">
+          {[
+            {l:"A320 CFM — Max TFLEX",v:"ISA + 53°C",c:"green"},
+            {l:"A321 IAE — Max TFLEX",v:"ISA + 42°C",c:"blue"},
+            {l:"A320 IAE — Max TFLEX",v:"ISA + 71°C",c:"amber"},
+            {l:"Min TFLEX",v:"NOT lower than TREF (flat temp)",c:"red"},
+            {l:"Min TFLEX",v:"NOT lower than actual OAT",c:"red"},
+            {l:"IAE crosswind start (A321/A320)",v:"Up to 35 kts",c:"orange"},
+          ].map((f,i)=>(
             <Card key={i} color={f.c}>
-              <div style={{fontSize:10,color:C.muted,marginBottom:3}}>{f.l}</div>
-              <div style={{fontSize:14,color:C[f.c]||C.amber,fontWeight:700,fontFamily:M}}>{f.v}</div>
+              <div style={{fontSize:11,fontWeight:600,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.04em"}}>{f.l}</div>
+              <div style={{fontSize:16,color:C[f.c+"Text"]||C.amberText,fontWeight:800}}>{f.v}</div>
             </Card>
           ))}
-          <Card><div style={{fontSize:11,color:C.muted}}>See FCTM PR-NP-SOP-120 for tailstrike avoidance guidance.</div></Card>
+          <div style={{fontSize:12,color:C.muted,padding:"8px 4px"}}>See FCTM PR-NP-SOP-120 for tailstrike avoidance guidance.</div>
         </Sec>}
         {sub==="WIND"&&<>
-          <Sec title="OPERATIONAL WIND LIMITS — inc. GUSTS (Maximum)">
-            <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:M}}>
-                <thead><tr>{["CONDITION","A320","A321"].map((h,i)=><th key={i} style={{padding:"6px 8px",borderBottom:`1px solid ${C.border}`,color:C.muted,textAlign:i===0?"left":"center",fontSize:10}}>{h}</th>)}</tr></thead>
-                <tbody>{WIND.map((r,i)=><tr key={i} style={{borderBottom:`1px solid ${C.border2}`}}><td style={{padding:"7px 8px",color:C.muted,fontSize:10}}>{r.c}</td><td style={{padding:"7px 8px",color:C.amber,textAlign:"center",fontWeight:700}}>{r.a320}</td><td style={{padding:"7px 8px",color:C.amber,textAlign:"center",fontWeight:700}}>{r.a321}</td></tr>)}</tbody>
+          <Sec title="Operational Wind Limits — inc. Gusts (Maximum)">
+            <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",borderRadius:10,border:`1px solid ${C.border}`}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead>
+                  <tr style={{backgroundColor:C.surface2}}>
+                    {["Condition","A320","A321"].map((h,i)=>(
+                      <th key={i} style={{padding:"8px 10px",borderBottom:`1px solid ${C.border}`,
+                        textAlign:i===0?"left":"center",fontSize:11,color:C.muted,fontWeight:700}}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {WIND.map((r,i)=>(
+                    <tr key={i} style={{backgroundColor:i%2===0?C.surface:C.surface2}}>
+                      <td style={{padding:"9px 10px",color:C.text,fontSize:11,borderBottom:`1px solid ${C.border2}`}}>{r.c}</td>
+                      <td style={{padding:"9px 10px",color:C.amberText,textAlign:"center",fontWeight:700,borderBottom:`1px solid ${C.border2}`}}>{r.a320}</td>
+                      <td style={{padding:"9px 10px",color:C.amberText,textAlign:"center",fontWeight:700,borderBottom:`1px solid ${C.border2}`}}>{r.a321}</td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           </Sec>
           <Card>
-            <div style={{fontSize:10,color:C.muted,lineHeight:1.8}}>
+            <div style={{fontSize:11,color:C.muted,lineHeight:1.8}}>
               * Auto rollout 15 kts: B-LPL, B-LPM, B-LPN, B-LPO, B-LPP, B-LPQ<br/>
               ** Auto rollout 20 kts: B-LPC, B-LPD, B-LPE, B-LPI, B-LPJ, B-LPK<br/>
               All limits include gusts.
             </div>
           </Card>
         </>}
-        {sub==="REV"&&<Sec title="REVERSE THRUST — ALL AIRCRAFT">
-          {[{t:"No reversers in flight",c:"red"},{t:"Do NOT backup aircraft using reverse thrust",c:"red"},{t:"Max reverse — do NOT use below 70 kts",c:"amber"},{t:"Idle reverse — permitted down to aircraft stop",c:"green"}].map((r,i)=>(
-            <Card key={i} color={r.c}><div style={{fontSize:13,color:C[r.c],fontFamily:M,fontWeight:700}}>{r.t}</div></Card>
+        {sub==="REV"&&<Sec title="Reverse Thrust — All Aircraft">
+          {[
+            {t:"No reversers in flight",c:"red"},
+            {t:"Do NOT backup aircraft using reverse thrust",c:"red"},
+            {t:"Max reverse — do NOT use below 70 kts",c:"amber"},
+            {t:"Idle reverse — permitted down to aircraft stop",c:"green"},
+          ].map((r,i)=>(
+            <Card key={i} color={r.c}>
+              <div style={{fontSize:14,color:C[r.c+"Text"],fontWeight:700}}>{r.t}</div>
+            </Card>
           ))}
         </Sec>}
       </div>
@@ -404,22 +519,29 @@ function TabsPage(){
   const[open,setOpen]=useState(null);
   return(
     <div style={{padding:12}}>
-      <Card color="red"><div style={{fontSize:11,color:C.red}}>⚠️ Temporary Abnormal Behaviors (FCOM TAB). Always verify DSC references in FCOM before flight.</div></Card>
+      <Card color="red">
+        <div style={{fontSize:12,color:C.redText,fontWeight:600}}>⚠️ Temporary Abnormal Behaviors (FCOM TAB). Always verify DSC references in FCOM before flight.</div>
+      </Card>
       {TABS_DATA.map((g,i)=>(
-        <div key={i} style={{marginBottom:8,borderRadius:6,overflow:"hidden",border:`1px solid ${C[g.col+"Border"]||C.border}`}}>
-          <button onClick={()=>setOpen(open===i?null:i)} style={{width:"100%",background:"none",backgroundColor:open===i?(C[g.col+"Bg"]||C.panel):C.panel,border:"none",padding:"12px",cursor:"pointer",textAlign:"left"}}>
+        <div key={i} style={{marginBottom:8,borderRadius:10,overflow:"hidden",
+          border:`1px solid ${C[g.col+"Border"]||C.border}`,backgroundColor:C.surface,
+          boxShadow:"0 1px 3px rgba(0,0,0,0.05)"}}>
+          <button onClick={()=>setOpen(open===i?null:i)} style={{width:"100%",
+            background:"none",backgroundColor:open===i?(C[g.col+"Bg"]||C.surface2):C.surface,
+            border:"none",padding:"13px 14px",cursor:"pointer",textAlign:"left"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,color:C[g.col]||C.amber,fontFamily:M,fontWeight:700}}>{g.g}</div>
-                <div style={{fontSize:10,color:C.muted,marginTop:3,lineHeight:1.4}}>{g.regs}</div>
+                <div style={{fontSize:13,color:C[g.col+"Text"]||C.amberText,fontWeight:700}}>{g.g}</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:3,lineHeight:1.4}}>{g.regs}</div>
               </div>
-              <div style={{color:C.muted,fontSize:14,flexShrink:0,marginLeft:8}}>{open===i?"▲":"▼"}</div>
+              <div style={{color:C.muted,fontSize:18,flexShrink:0,marginLeft:8}}>{open===i?"▲":"▼"}</div>
             </div>
           </button>
           {open===i&&(
-            <div style={{padding:"0 12px 12px",backgroundColor:C[g.col+"Bg"]||C.panel}}>
+            <div style={{backgroundColor:C[g.col+"Bg"]||C.surface2,borderTop:`1px solid ${C[g.col+"Border"]||C.border}`}}>
               {g.items.map((item,j)=>(
-                <div key={j} style={{padding:"7px 0",borderBottom:`1px solid ${C.border2}`,fontSize:11,color:"#8899bb",lineHeight:1.5,fontFamily:M}}>{item}</div>
+                <div key={j} style={{padding:"9px 14px",borderBottom:`1px solid ${C.border2}`,
+                  fontSize:12,color:C.text,lineHeight:1.5}}>{item}</div>
               ))}
             </div>
           )}
@@ -433,21 +555,28 @@ function SepPage(){
   const[sub,setSub]=useState("PREG");
   return(
     <div>
-      <div style={{display:"flex",gap:4,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+      <div style={{display:"flex",gap:6,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`,
+        overflowX:"auto",WebkitOverflowScrolling:"touch",backgroundColor:C.surface}}>
         {[["PREG","Pregnant"],["PRM","PRM / UM"],["EQUIP","Equipment"],["PED","PED"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setSub(k)} style={{flexShrink:0,padding:"6px 10px",border:`1px solid ${sub===k?C.amber:C.border}`,backgroundColor:sub===k?C.amberBg:"transparent",color:sub===k?C.amber:C.muted,borderRadius:4,fontSize:10,fontFamily:M,cursor:"pointer"}}>{l}</button>
+          <button key={k} onClick={()=>setSub(k)} style={{flexShrink:0,padding:"6px 14px",
+            border:`1.5px solid ${sub===k?C.blue:C.border}`,
+            backgroundColor:sub===k?C.blueBg:"transparent",
+            color:sub===k?C.blueText:C.muted,
+            borderRadius:20,fontSize:11,fontWeight:600,marginBottom:8}}>
+            {l}
+          </button>
         ))}
       </div>
       <div style={{padding:12}}>
-        {sub==="PREG"&&<Sec title="PREGNANT PASSENGER POLICY (ref. OM-E)">
+        {sub==="PREG"&&<Sec title="Pregnant Passenger Policy (ref. OM-E)">
           {PREG.map((p,i)=>(
             <Card key={i} color={p.fly?"default":"red"}>
-              <div style={{fontSize:12,color:p.fly?C.amber:C.red,fontWeight:700,marginBottom:4,fontFamily:M}}>{p.w}</div>
-              <div style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{p.req}</div>
+              <div style={{fontSize:13,color:p.fly?C.amberText:C.redText,fontWeight:700,marginBottom:4}}>{p.w}</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{p.req}</div>
             </Card>
           ))}
         </Sec>}
-        {sub==="PRM"&&<Sec title="PRM / UM / YP LIMITS">
+        {sub==="PRM"&&<Sec title="PRM / UM / YP Limits">
           {[
             {l:"PRM (self-reliant) — A320",v:"4 per flight"},
             {l:"PRM (self-reliant) — A321",v:"8 per flight"},
@@ -457,25 +586,33 @@ function SepPage(){
             {l:"Infants — A321",v:"Max 15"},
           ].map((r,i)=><Row key={i} label={r.l} value={r.v} hi={r.l.includes("PRM")}/>)}
         </Sec>}
-        {sub==="EQUIP"&&<Sec title="COCKPIT EMERGENCY EQUIPMENT — SERVICEABILITY">
+        {sub==="EQUIP"&&<Sec title="Cockpit Emergency Equipment — Serviceability">
           {EQUIP.map((eq,i)=>(
             <Card key={i}>
-              <div style={{fontSize:12,color:C.amber,fontWeight:700,marginBottom:8,fontFamily:M}}>{eq.n}</div>
-              {eq.ck.map((c,j)=><div key={j} style={{display:"flex",gap:8,marginBottom:4}}>
-                <span style={{color:C.green,flexShrink:0}}>✓</span>
-                <span style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{c}</span>
-              </div>)}
+              <div style={{fontSize:13,color:C.amberText,fontWeight:700,marginBottom:8}}>{eq.n}</div>
+              {eq.ck.map((c,j)=>(
+                <div key={j} style={{display:"flex",gap:10,marginBottom:5,alignItems:"flex-start"}}>
+                  <span style={{color:C.greenText,fontWeight:700,flexShrink:0,fontSize:14}}>✓</span>
+                  <span style={{fontSize:12,color:C.text,lineHeight:1.5}}>{c}</span>
+                </div>
+              ))}
             </Card>
           ))}
         </Sec>}
-        {sub==="PED"&&<Sec title="PORTABLE ELECTRONIC DEVICES (PED)">
-          {[{t:"U-PEDs",f:"Unintentionally Transmitting PEDs",c:"amber"},{t:"T-PEDs",f:"Intentionally Transmitting PEDs",c:"red"},{t:"C-PEDs",f:"Controlled Portable Devices",c:"green"}].map((p,i)=>(
+        {sub==="PED"&&<Sec title="Portable Electronic Devices (PED)">
+          {[
+            {t:"U-PEDs",f:"Unintentionally Transmitting PEDs",c:"amber"},
+            {t:"T-PEDs",f:"Intentionally Transmitting PEDs",c:"red"},
+            {t:"C-PEDs",f:"Controlled Portable Devices",c:"green"},
+          ].map((p,i)=>(
             <Card key={i} color={p.c}>
-              <div style={{fontSize:14,color:C[p.c],fontWeight:700,fontFamily:M}}>{p.t}</div>
-              <div style={{fontSize:11,color:"#8899bb",marginTop:4}}>{p.f}</div>
+              <div style={{fontSize:16,color:C[p.c+"Text"],fontWeight:800}}>{p.t}</div>
+              <div style={{fontSize:12,color:C.text,marginTop:3}}>{p.f}</div>
             </Card>
           ))}
-          <Card><div style={{fontSize:11,color:C.muted,lineHeight:1.7}}>Refer to OM-A and FCOM for approved PED usage restrictions on the flight deck and in the cabin.</div></Card>
+          <div style={{fontSize:12,color:C.muted,padding:"8px 4px",lineHeight:1.6}}>
+            Refer to OM-A and FCOM for approved PED usage restrictions on the flight deck and in the cabin.
+          </div>
         </Sec>}
       </div>
     </div>
@@ -486,36 +623,44 @@ function RefPage(){
   const[sub,setSub]=useState("DOCS");
   return(
     <div>
-      <div style={{display:"flex",gap:4,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`}}>
+      <div style={{display:"flex",gap:6,padding:"12px 12px 0",borderBottom:`1px solid ${C.border}`,backgroundColor:C.surface}}>
         {[["DOCS","Doc Structure"],["TERM","Terminology"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setSub(k)} style={{padding:"6px 10px",border:`1px solid ${sub===k?C.amber:C.border}`,backgroundColor:sub===k?C.amberBg:"transparent",color:sub===k?C.amber:C.muted,borderRadius:4,fontSize:10,fontFamily:M,cursor:"pointer"}}>{l}</button>
+          <button key={k} onClick={()=>setSub(k)} style={{padding:"6px 14px",
+            border:`1.5px solid ${sub===k?C.blue:C.border}`,
+            backgroundColor:sub===k?C.blueBg:"transparent",
+            color:sub===k?C.blueText:C.muted,
+            borderRadius:20,fontSize:11,fontWeight:600,marginBottom:8}}>
+            {l}
+          </button>
         ))}
       </div>
       <div style={{padding:12}}>
         {sub==="DOCS"&&<>
           {DOCS.map((d,i)=>(
             <Card key={i} color={d.col}>
-              <div style={{fontSize:14,color:C[d.col],fontWeight:700,fontFamily:M,marginBottom:8}}>{d.d}</div>
-              {d.items.map((item,j)=><div key={j} style={{display:"flex",gap:8,marginBottom:4}}>
-                <span style={{color:C[d.col],flexShrink:0}}>—</span>
-                <span style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{item}</span>
-              </div>)}
+              <div style={{fontSize:15,color:C[d.col+"Text"],fontWeight:800,marginBottom:10}}>{d.d}</div>
+              {d.items.map((item,j)=>(
+                <div key={j} style={{display:"flex",gap:10,marginBottom:5}}>
+                  <span style={{color:C[d.col+"Text"],flexShrink:0,fontWeight:700}}>—</span>
+                  <span style={{fontSize:12,color:C.text,lineHeight:1.5}}>{item}</span>
+                </div>
+              ))}
             </Card>
           ))}
           <Card>
-            <div style={{fontSize:10,color:C.muted,lineHeight:1.8}}>
-              <div style={{color:C.amber,fontWeight:700,marginBottom:4}}>ABBREVIATIONS</div>
-              <div><span style={{color:C.amber}}>DU</span> — Documentary Unit (technical content)</div>
-              <div><span style={{color:C.amber}}>LEDU</span> — List of Effective Documentary Unit</div>
-              <div><span style={{color:C.amber}}>TDU</span> — Temporary Documentary Unit</div>
-            </div>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Abbreviations</div>
+            {[["DU","Documentary Unit — technical content"],["LEDU","List of Effective Documentary Unit"],["TDU","Temporary Documentary Unit"]].map(([k,v],i)=>(
+              <div key={i} style={{fontSize:12,color:C.text,marginBottom:4}}>
+                <span style={{color:C.amberText,fontWeight:700}}>{k}</span> — {v}
+              </div>
+            ))}
           </Card>
         </>}
-        {sub==="TERM"&&<Sec title="TERMINOLOGY & DEFINITIONS">
+        {sub==="TERM"&&<Sec title="Terminology & Definitions">
           {TERMS.map((t,i)=>(
             <Card key={i} color={t.col}>
-              <div style={{fontSize:13,color:C[t.col]||C.amber,fontWeight:700,fontFamily:M,marginBottom:6}}>{t.t}</div>
-              <div style={{fontSize:11,color:"#8899bb",lineHeight:1.5}}>{t.def}</div>
+              <div style={{fontSize:13,color:C[t.col+"Text"]||C.amberText,fontWeight:800,marginBottom:6}}>{t.t}</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.5}}>{t.def}</div>
             </Card>
           ))}
         </Sec>}
@@ -529,43 +674,51 @@ function App(){
   const[page,setPage]=useState("home");
   const[sel,setSel]=useState(null);
   const[vh,setVh]=useState(window.innerHeight);
-
   useEffect(()=>{
-    const update=()=>setVh(window.innerHeight);
-    window.addEventListener("resize",update);
-    return()=>window.removeEventListener("resize",update);
+    const upd=()=>setVh(window.innerHeight);
+    window.addEventListener("resize",upd);
+    return()=>window.removeEventListener("resize",upd);
   },[]);
 
   const goAc=(reg)=>{setSel(reg);setPage("ac");};
   const goHome=()=>{setSel(null);setPage("home");};
 
-  const titles={home:"FLEET",ac:sel||"",limits:"LIMITS",tabs:"TABS",sep:"SEP",ref:"REFERENCE"};
-  const subs={home:"Aircraft Reference",ac:sel?FLEET.find(f=>f.reg===sel)?.model:"",limits:"Engine · Oil · Start · Flex · Wind · Rev",tabs:"Temporary Abnormal Behaviors",sep:"Passengers · Equipment",ref:"Documents · Terminology"};
+  const HEADER=64, NAV=58, FOOTER=26;
+  const scrollH=vh-HEADER-NAV-FOOTER;
 
-  const HEADER_H=68;
-  const NAV_H=62;
-  const FOOTER_H=28;
-  const scrollH=vh-HEADER_H-NAV_H-FOOTER_H;
+  const selAc=sel?FLEET.find(f=>f.reg===sel):null;
 
   return(
-    <div style={{height:vh,backgroundColor:C.bg,color:C.text,fontFamily:M,maxWidth:480,margin:"0 auto",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{height:vh,backgroundColor:C.bg,color:C.text,maxWidth:480,
+      margin:"0 auto",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
       {/* HEADER */}
-      <div style={{height:HEADER_H,backgroundColor:C.bg,borderBottom:`1px solid ${C.border}`,flexShrink:0,display:"flex",alignItems:"center",padding:"0 16px",gap:10}}>
-        {page==="ac"&&<button onClick={goHome} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,padding:"6px 10px",borderRadius:4,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"}}>← BACK</button>}
+      <div style={{height:HEADER,backgroundColor:C.surface,
+        borderBottom:`1px solid ${C.border}`,flexShrink:0,
+        display:"flex",alignItems:"center",padding:"0 16px",gap:10,
+        boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+        {page==="ac"&&(
+          <button onClick={goHome} style={{border:`1px solid ${C.border}`,
+            backgroundColor:C.surface2,color:C.muted,
+            padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>
+            ← Back
+          </button>
+        )}
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:9,color:C.dim,letterSpacing:"0.15em"}}>HONG KONG AIRLINES</div>
-          <div style={{fontSize:15,color:C.amber,fontWeight:700,letterSpacing:"0.1em"}}>{titles[page]}</div>
-          <div style={{fontSize:10,color:C.dim}}>{subs[page]}</div>
-        </div>
-        {page==="ac"&&sel&&(()=>{const a=FLEET.find(f=>f.reg===sel);return(
-          <div style={{textAlign:"right",flexShrink:0}}>
-            <div style={{fontSize:10,color:C.dim}}>MSN {a?.msn}</div>
-            <div style={{fontSize:11,color:"#8899bb"}}>{a?.engine}</div>
+          <div style={{fontSize:10,color:C.dim,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>Hong Kong Airlines</div>
+          <div style={{fontSize:17,color:C.text,fontWeight:800,lineHeight:1.2}}>
+            {page==="home"?"Fleet Reference":page==="ac"?sel:page==="limits"?"Limitations":page==="tabs"?"TABs":page==="sep"?"SEP":"Reference"}
           </div>
-        );})()}
+        </div>
+        {page==="ac"&&selAc&&(
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontSize:10,color:C.dim,fontWeight:500}}>MSN {selAc.msn}</div>
+            <div style={{fontSize:11,color:C.muted,fontWeight:500}}>{selAc.engine}</div>
+          </div>
+        )}
       </div>
 
-      {/* SCROLL CONTENT */}
+      {/* SCROLL AREA */}
       <div style={{height:scrollH,overflowY:"auto",WebkitOverflowScrolling:"touch",flexShrink:0}}>
         {page==="home"  &&<AcGrid onSel={goAc}/>}
         {page==="ac"    &&sel&&<AcDetail reg={sel}/>}
@@ -576,17 +729,21 @@ function App(){
       </div>
 
       {/* FOOTER */}
-      <div style={{height:FOOTER_H,display:"flex",alignItems:"center",justifyContent:"center",borderTop:`1px solid ${C.border2}`,flexShrink:0}}>
-        <div style={{fontSize:9,color:C.vdim,letterSpacing:"0.08em"}}>NON-OFFICIAL · NOT FOR OPERATIONAL USE · V2.6 MAY 2026</div>
+      <div style={{height:FOOTER,display:"flex",alignItems:"center",justifyContent:"center",
+        borderTop:`1px solid ${C.border}`,flexShrink:0,backgroundColor:C.surface2}}>
+        <div style={{fontSize:9,color:C.dim,fontWeight:500,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+          Non-Official · Not for Operational Use · V2.6 May 2026
+        </div>
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{height:NAV_H,backgroundColor:C.bg,borderTop:`1px solid ${C.border}`,display:"flex",flexShrink:0}}>
-        <NavBtn icon="✈️" label="FLEET"  active={page==="home"||page==="ac"} onClick={goHome}/>
-        <NavBtn icon="⚙️" label="LIMITS" active={page==="limits"} onClick={()=>setPage("limits")}/>
-        <NavBtn icon="⚠️" label="TABS"   active={page==="tabs"}   onClick={()=>setPage("tabs")}/>
+      <div style={{height:NAV,backgroundColor:C.nav,display:"flex",flexShrink:0,
+        boxShadow:"0 -2px 8px rgba(0,0,0,0.15)"}}>
+        <NavBtn icon="✈️" label="Fleet"  active={page==="home"||page==="ac"} onClick={goHome}/>
+        <NavBtn icon="⚙️" label="Limits" active={page==="limits"} onClick={()=>setPage("limits")}/>
+        <NavBtn icon="⚠️" label="TABs"   active={page==="tabs"}   onClick={()=>setPage("tabs")}/>
         <NavBtn icon="🆘" label="SEP"    active={page==="sep"}    onClick={()=>setPage("sep")}/>
-        <NavBtn icon="📚" label="REF"    active={page==="ref"}    onClick={()=>setPage("ref")}/>
+        <NavBtn icon="📚" label="Ref"    active={page==="ref"}    onClick={()=>setPage("ref")}/>
       </div>
     </div>
   );
