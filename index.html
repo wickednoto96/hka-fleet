@@ -441,17 +441,75 @@
 
   /* ── TOUCH FRIENDLY ── */
   @media (pointer: coarse) {
-    .aircraft-item { padding: 12px 14px; }
-    .tab-btn { padding: 8px 18px; }
-    .filter-chip { padding: 5px 11px; }
+    .aircraft-item { padding: 13px 14px; }
+    .tab-btn { padding: 8px 16px; }
+    .filter-chip { padding: 6px 11px; }
   }
 
-  /* ── NARROW ── */
+  /* ── MOBILE BACK BUTTON (hidden on desktop) ── */
+  .mobile-back {
+    display: none;
+    align-items: center; gap: 7px;
+    background: var(--accent); color: white;
+    border: none; border-radius: 8px;
+    padding: 9px 16px; margin-bottom: 18px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+  .mobile-back:active { opacity: 0.85; }
+
+  /* ── MOBILE — full single-panel layout ── */
   @media (max-width: 640px) {
-    aside { width: 175px; min-width: 175px; }
+    header { padding: 9px 14px; gap: 10px; }
+    .logo-sub { display: none; }
+    .logo-text { font-size: 14px; }
+    .logo-icon { width: 32px; height: 32px; }
+    .search-wrap { max-width: 140px; }
+    #globalSearch { font-size: 12px; padding: 6px 8px 6px 30px; }
+    .tab-btn { padding: 6px 12px; font-size: 12px; }
+
+    /* Body: stack panels, each takes full space */
+    .body { position: relative; }
+
+    aside {
+      width: 100%; min-width: 100%;
+    }
+    main {
+      display: none;
+      padding: 16px;
+    }
+
+    /* When aircraft selected on mobile: hide list, show detail */
+    body.mobile-detail aside { display: none; }
+    body.mobile-detail main  { display: block; flex: 1; overflow-y: auto; }
+
+    /* Show back button on mobile detail view */
+    body.mobile-detail .mobile-back { display: flex; }
+
+    /* Layout adjustments for small screen detail */
     .two-col { grid-template-columns: 1fr; }
-    main { padding: 16px; }
-    .offline-badge span { display: none; }
+    .ac-hero { padding: 16px; }
+    .ac-reg-large { font-size: 26px; }
+    .ac-hero::after { font-size: 50px; }
+    .info-grid { grid-template-columns: 1fr 1fr; }
+    .stats-row { gap: 8px; }
+    .stat-card { padding: 11px 12px; }
+    .stat-num { font-size: 22px; }
+    .data-table { font-size: 12px; }
+    .data-table th, .data-table td { padding: 8px 10px; }
+
+    /* Limits two-col → single */
+    .limits-view .two-col { grid-template-columns: 1fr; }
+
+    /* Sidebar legend compact */
+    .sidebar-legend { padding: 8px 12px; gap: 10px; font-size: 10px; }
+    .sidebar-filters { padding: 8px 8px 6px; gap: 3px; }
+    .filter-chip { font-size: 10px; padding: 4px 9px; }
+  }
+
+  @media (max-width: 380px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .search-wrap { max-width: 110px; }
   }
 </style>
 </head>
@@ -913,9 +971,16 @@ function setFilter(f) {
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===(tab==='fleet'?0:1)));
-  if (tab === 'limits') renderLimits();
-  else if (selectedReg) selectAircraft(selectedReg);
-  else renderWelcome();
+  if (tab === 'limits') {
+    document.body.classList.add('mobile-detail');
+    document.getElementById('mainContent').scrollTop = 0;
+    renderLimits();
+  } else if (selectedReg) {
+    selectAircraft(selectedReg);
+  } else {
+    document.body.classList.remove('mobile-detail');
+    renderWelcome();
+  }
 }
 
 function selectAircraft(reg) {
@@ -925,7 +990,16 @@ function selectAircraft(reg) {
   document.querySelectorAll('.aircraft-item').forEach(el => el.classList.remove('selected'));
   const el = document.getElementById('item-' + reg.replace('-',''));
   if (el) { el.classList.add('selected'); el.scrollIntoView({block:'nearest'}); }
+  // On mobile: switch to detail panel
+  document.body.classList.add('mobile-detail');
+  document.getElementById('mainContent').scrollTop = 0;
   renderAircraft(fleet.find(a => a.reg === reg));
+}
+
+function mobileBack() {
+  document.body.classList.remove('mobile-detail');
+  selectedReg = null;
+  document.querySelectorAll('.aircraft-item').forEach(el => el.classList.remove('selected'));
 }
 
 function kg(n) { return n.toLocaleString() + ' kg'; }
@@ -968,7 +1042,7 @@ function renderWelcome() {
           <th>Year</th>
         </tr></thead>
         <tbody>
-          ${fleet.map(ac=>`
+          ${[...fleet].sort((a,b)=>a.reg.localeCompare(b.reg)).map(ac=>`
           <tr onclick="selectAircraft('${ac.reg}')" style="cursor:pointer">
             <td><span style="font-family:monospace;font-weight:700;color:${ac.cautions.length>0||ac.confirm?'var(--amber)':'var(--accent)'}">${ac.reg}${ac.cautions.length>0||ac.confirm?' ▲':''}</span></td>
             <td>${ac.model}</td>
@@ -987,6 +1061,8 @@ function renderAircraft(ac) {
   const hasCaution = ac.cautions.length > 0;
   document.getElementById('mainContent').innerHTML = `
     <div class="ac-card">
+
+      <button class="mobile-back" onclick="mobileBack()">← All Aircraft</button>
 
       <div class="ac-hero ${ac.engine.toLowerCase()}" data-model="${ac.model}">
         <div class="ac-reg-large">${ac.reg}</div>
@@ -1089,6 +1165,7 @@ function renderAircraft(ac) {
 function renderLimits() {
   document.getElementById('mainContent').innerHTML = `
     <div class="limits-view">
+      <button class="mobile-back" onclick="mobileBack()">← Fleet</button>
       <div class="limits-header">Quick Reference — Limitations</div>
       <div class="limits-sub">Source: FCOM DSC-70-05 · OM-E &nbsp;|&nbsp; Non-official, not for operational use</div>
 
