@@ -1,7 +1,7 @@
 // HKA Fleet Reference — Service Worker
 // Caches the full app so it works with no internet connection.
 
-const CACHE = 'hka-fleet-v1';
+const CACHE = 'hka-fleet-v2';
 
 const ASSETS = [
   './',
